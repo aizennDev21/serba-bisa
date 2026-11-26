@@ -19,7 +19,7 @@
 <main class="booking-page">
 	<header class="booking-header">
 		<a href="/" class="booking-brand">s. serba<span>bisa</span>.</a>
-		<nav aria-label="Navigasi"><a href="/jasa">Jelajahi jasa</a><a href="/chat">Pesan</a><a href="/akun">Akun</a></nav>
+		<nav aria-label="Navigasi"><a href="/jasa">Jelajahi jasa</a><a href="/chat">Pesan</a><a href="/notifikasi">Notifikasi</a><a href="/akun">Akun</a></nav>
 	</header>
 	<section class="booking-content">
 		<div class="booking-heading">

@@ -117,7 +117,7 @@ Role dengan kewenangan tertinggi untuk mengelola operasional platform.
 
 Prioritas berikut adalah rekomendasi untuk validasi dan pengembangan bertahap, bukan komitmen scope MVP.
 
-- **P0 setelah MVP:** pelaporan pengguna/listing/ulasan, verifikasi nomor telepon atau email, notifikasi pesan baru, status pesan terkirim/dibaca, dan dashboard metrik dasar.
+- **P0 setelah MVP:** pelaporan pengguna/listing/ulasan, verifikasi nomor telepon atau email, notifikasi pesan baru, status pesan terkirim/dibaca, kalender ketersediaan, dan dashboard metrik dasar.
 - **P1:** kalender ketersediaan, notifikasi email/push, favorit, berbagi listing, serta foto/portofolio jasa.
 - **P2:** pembayaran online, kebijakan pembatalan/refund, komisi platform, invoice, paket promosi, kupon, dan program loyalitas.
 - **P3:** aplikasi PWA yang lebih lengkap, rekomendasi personal, dukungan multi-bahasa, verifikasi penyedia, dan sistem sengketa.
@@ -245,6 +245,13 @@ Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status
 - **FR-53:** Owner dapat menandai pesanan diterima sebagai selesai. Pesanan yang selesai, ditolak, atau dibatalkan tidak dapat diaktifkan kembali.
 - **FR-54:** Penyewa dan owner hanya dapat melihat serta mengubah pesanan yang melibatkan akun mereka; setiap perubahan status dicatat dengan pelaku dan waktu.
 - **FR-55:** Chat tetap menjadi fitur privat terpisah dan dapat dimulai tanpa pesanan. Pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa tidak termasuk alur ini.
+
+### 5.9 Notifikasi
+
+- **FR-56:** Sistem membuat notifikasi untuk owner ketika penyewa mengajukan pesanan, dan untuk pihak lain ketika status pesanan berubah.
+- **FR-57:** Notifikasi disimpan secara persisten, hanya dapat dibaca/ditandai dibaca oleh penerimanya, serta memiliki status baca dan waktu pembuatan.
+- **FR-58:** Notifikasi baru disampaikan realtime saat penerima terhubung; setelah reconnect, UI memuat daftar persisten dari server.
+- **FR-59:** Pengguna dapat menandai satu notifikasi atau seluruh notifikasi sebagai sudah dibaca.
 
 ## 6. Kebutuhan Non-Fungsional
 
@@ -381,6 +388,7 @@ Relasi, batas retensi, penghapusan/anonimisasi, indeks, serta aturan jumlah bala
 10. Super admin dapat mengelola akun dan role admin; perubahan sensitif menghasilkan audit log.
 11. Peta/lokasi ditampilkan tanpa meminta geolokasi perangkat sebelum pengguna memberi izin.
 12. Halaman utama diuji di viewport mobile dan desktop, dapat digunakan dengan keyboard, dan metrik performa awal dicatat terhadap target NFR.
+13. Pemohon pesanan dan pihak terkait menerima notifikasi persisten saat permintaan/status berubah; akses notifikasi dibatasi pada penerima.
 
 ## 10. Metrik Keberhasilan
 

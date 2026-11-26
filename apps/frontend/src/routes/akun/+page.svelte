@@ -46,6 +46,7 @@
 					</div>
 					<a class="account-manage-services" href="/chat">Pesan dan percakapan →</a>
 					<a class="account-manage-services" href="/pesanan">Pesanan saya →</a>
+					<a class="account-manage-services" href="/notifikasi">Notifikasi →</a>
 					<a class="account-manage-services" href="/owner/jasa">Kelola jasa saya →</a>
 					{#if data.user.roles.includes('admin') || data.user.roles.includes('super_admin')}
 						<a class="account-manage-services" href="/admin/jasa">Moderasi jasa →</a>

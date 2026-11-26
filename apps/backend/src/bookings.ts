@@ -7,10 +7,12 @@ import type { createDatabase } from './db/client';
 import {
 	bookingStatusAuditLogs,
 	bookings,
+	notifications,
 	services,
 	userRoles,
 	users
 } from './db/schema';
+import { publishNotification } from './notifications';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -142,31 +144,50 @@ export function createBookingsRouter(database?: Database) {
 					return { error: { code: 'OWNER_CANNOT_BOOK', message: 'Penyedia tidak dapat memesan jasanya sendiri.' } };
 				}
 
-				const [booking] = await database
-					.insert(bookings)
-					.values({
-						serviceId: service.id,
-						seekerId: actor.id,
-						ownerId: service.ownerId,
-						serviceTitle: service.title,
-						price: service.price,
-						priceUnit: service.priceUnit,
-						requestMessage,
-						requestedAt: body.requestedAt ? new Date(body.requestedAt) : null,
-						requestedLocation
-					})
-					.returning({
-						id: bookings.id,
-						serviceId: bookings.serviceId,
-						status: bookings.status,
-						createdAt: bookings.createdAt
-					});
-				if (!booking) {
+				const booking = await database.transaction(async (tx) => {
+					const [created] = await tx
+						.insert(bookings)
+						.values({
+							serviceId: service.id,
+							seekerId: actor.id,
+							ownerId: service.ownerId,
+							serviceTitle: service.title,
+							price: service.price,
+							priceUnit: service.priceUnit,
+							requestMessage,
+							requestedAt: body.requestedAt ? new Date(body.requestedAt) : null,
+							requestedLocation
+						})
+						.returning({
+							id: bookings.id,
+							serviceId: bookings.serviceId,
+							status: bookings.status,
+							createdAt: bookings.createdAt
+						});
+					if (!created) return null;
+					const [notification] = await tx
+						.insert(notifications)
+						.values({
+							userId: service.ownerId,
+							bookingId: created.id,
+							type: 'booking_requested',
+							title: 'Permintaan pesanan baru',
+							message: `${actor.displayName} mengajukan pesanan untuk jasa “${service.title}”.`
+						})
+						.returning({
+							id: notifications.id,
+							type: notifications.type,
+							createdAt: notifications.createdAt
+						});
+					return { booking: created, notification };
+				});
+				if (!booking?.booking || !booking.notification) {
 					set.status = 500;
 					return { error: { code: 'BOOKING_CREATE_FAILED', message: 'Permintaan pesanan tidak dapat disimpan.' } };
 				}
+				publishNotification(service.ownerId, booking.notification);
 				set.status = 201;
-				return { data: booking };
+				return { data: booking.booking };
 			},
 			{ body: createBookingBody }
 		)
@@ -245,13 +266,35 @@ export function createBookingsRouter(database?: Database) {
 						newStatus: body.status,
 						reason
 					});
-					return changed;
+					const recipientId = isSeeker ? booking.ownerId : booking.seekerId;
+					const statusLabels: Record<typeof body.status, string> = {
+						accepted: 'diterima',
+						declined: 'ditolak',
+						cancelled: 'dibatalkan',
+						completed: 'ditandai selesai'
+					};
+					const [notification] = await tx
+						.insert(notifications)
+						.values({
+							userId: recipientId,
+							bookingId: booking.id,
+							type: 'booking_status_changed',
+							title: 'Status pesanan diperbarui',
+							message: `${actor.displayName} ${statusLabels[body.status]} pesanan.${reason ? ` Alasan: ${reason}` : ''}`
+						})
+						.returning({
+							id: notifications.id,
+							type: notifications.type,
+							createdAt: notifications.createdAt
+						});
+					return { changed, notification, recipientId };
 				});
-				if (!updated) {
+				if (!updated?.changed || !updated.notification) {
 					set.status = 409;
 					return { error: { code: 'BOOKING_ALREADY_CHANGED', message: 'Status pesanan baru saja berubah. Muat ulang halaman.' } };
 				}
-				return { data: updated };
+				publishNotification(updated.recipientId, updated.notification);
+				return { data: updated.changed };
 			},
 			{ params: bookingParams, body: changeStatusBody }
 		);

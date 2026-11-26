@@ -7,6 +7,7 @@ import { createAdminServicesRouter } from './admin-services';
 import { createAdminUsersRouter } from './admin-users';
 import { createBookingsRouter } from './bookings';
 import { createChatRouter } from './chat';
+import { createNotificationsRouter } from './notifications';
 import { createOwnerServicesRouter } from './owner-services';
 import { createReviewsRouter } from './reviews';
 import { createServicesRouter } from './services';
@@ -29,6 +30,7 @@ export function createApp(
 		.use(createAdminUsersRouter(database))
 		.use(createBookingsRouter(database))
 		.use(createChatRouter(database, frontendOrigin))
+		.use(createNotificationsRouter(database, frontendOrigin))
 		.use(createOwnerServicesRouter(database))
 		.use(createReviewsRouter(database))
 		.use(createServicesRouter(database));

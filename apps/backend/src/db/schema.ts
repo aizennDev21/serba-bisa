@@ -37,6 +37,10 @@ export const bookingStatus = pgEnum('booking_status', [
 	'cancelled',
 	'completed'
 ]);
+export const notificationType = pgEnum('notification_type', [
+	'booking_requested',
+	'booking_status_changed'
+]);
 
 export const users = pgTable('users', {
 	id: uuid('id').defaultRandom().primaryKey(),
@@ -301,4 +305,26 @@ export const bookingStatusAuditLogs = pgTable(
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(table) => [index('booking_status_audit_logs_booking_created_at_idx').on(table.bookingId, table.createdAt)]
+);
+
+export const notifications = pgTable(
+	'notifications',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		bookingId: uuid('booking_id')
+			.notNull()
+			.references(() => bookings.id, { onDelete: 'cascade' }),
+		type: notificationType('type').notNull(),
+		title: text('title').notNull(),
+		message: text('message').notNull(),
+		readAt: timestamp('read_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('notifications_user_created_at_idx').on(table.userId, table.createdAt),
+		index('notifications_user_read_at_idx').on(table.userId, table.readAt)
+	]
 );

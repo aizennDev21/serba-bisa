@@ -57,6 +57,13 @@
       "when": 1795697966333,
       "tag": "0007_bumpy_beyonder",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795698975900,
+      "tag": "0008_good_dark_beast",
+      "breakpoints": true
     }
   ]
 }

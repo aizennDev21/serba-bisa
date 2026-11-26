@@ -77,6 +77,18 @@ Penyewa dapat mengajukan permintaan dari detail jasa aktif dengan rincian kebutu
 
 Alur ini tidak memproses pembayaran atau menetapkan tagihan. Harga snapshot adalah informasi dari listing; pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa belum tersedia. Chat tetap terpisah dan tidak membutuhkan pesanan.
 
+## Notifikasi pesanan
+
+Penerima memperoleh notifikasi saat ada permintaan pesanan baru atau status pesanan berubah. Notifikasi disimpan sehingga tetap tersedia setelah pengguna offline, sementara SSE memberi sinyal realtime saat halaman `/notifikasi` terbuka.
+
+- `GET /api/notifications` — membaca maksimal 100 notifikasi milik pengguna dan jumlah yang belum dibaca.
+- `POST /api/notifications/:notificationId/read` — menandai notifikasi milik pengguna sebagai dibaca.
+- `POST /api/notifications/read-all` — menandai seluruh notifikasi milik pengguna sebagai dibaca.
+- `GET /api/notifications/events` — stream SSE terautentikasi, dibatasi ke origin frontend yang dikonfigurasi.
+- `/notifikasi` — menampilkan notifikasi terbaru dan memperbarui daftar saat event realtime diterima.
+
+SSE memakai memori proses dan hanya dipakai untuk memberi sinyal; database tetap sumber kebenaran. Untuk menjalankan beberapa backend, diperlukan broker/pub-sub bersama. Email/push, preferensi notifikasi, dan kebijakan retensi belum tersedia.
+
 ## Chat privat
 
 Penyewa yang sudah masuk dapat memulai satu percakapan privat per jasa aktif dari halaman detail jasa. Owner dapat membuka inbox `/chat` untuk melihat percakapan dan membalas. Pesan teks disimpan di PostgreSQL; pesan baru dikirim melalui endpoint HTTP terautentikasi dan notifikasi realtime dikirim melalui Server-Sent Events (SSE). Konten pesan hanya diambil ulang melalui endpoint yang memeriksa peserta percakapan.
