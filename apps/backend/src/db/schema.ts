@@ -342,13 +342,16 @@ export const ownerWeeklyAvailability = pgTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		dayOfWeek: integer('day_of_week').notNull(),
-		isAvailable: boolean('is_available').notNull().default(false),
 		startMinute: integer('start_minute').notNull().default(480),
 		endMinute: integer('end_minute').notNull().default(1020),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(table) => [
-		uniqueIndex('owner_weekly_availability_owner_day_unique_idx').on(table.ownerId, table.dayOfWeek),
+		uniqueIndex('owner_weekly_availability_owner_day_start_unique_idx').on(
+			table.ownerId,
+			table.dayOfWeek,
+			table.startMinute
+		),
 		check('owner_weekly_availability_day_range_check', sql`${table.dayOfWeek} between 0 and 6`),
 		check(
 			'owner_weekly_availability_start_minute_check',
@@ -360,7 +363,7 @@ export const ownerWeeklyAvailability = pgTable(
 		),
 		check(
 			'owner_weekly_availability_interval_check',
-			sql`not ${table.isAvailable} or ${table.endMinute} > ${table.startMinute}`
+			sql`${table.endMinute} > ${table.startMinute}`
 		)
 	]
 );
@@ -381,7 +384,8 @@ export const ownerAvailabilityExceptions = pgTable(
 	(table) => [
 		uniqueIndex('owner_availability_exceptions_owner_date_unique_idx').on(
 			table.ownerId,
-			table.serviceDate
+			table.serviceDate,
+			table.startMinute
 		),
 		index('owner_availability_exceptions_date_idx').on(table.serviceDate),
 		check(

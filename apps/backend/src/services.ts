@@ -220,23 +220,22 @@ export function createServicesRouter(database?: Database) {
 				const availabilityRows = await database
 					.select({
 						dayOfWeek: ownerWeeklyAvailability.dayOfWeek,
-						isAvailable: ownerWeeklyAvailability.isAvailable,
 						startMinute: ownerWeeklyAvailability.startMinute,
 						endMinute: ownerWeeklyAvailability.endMinute
 					})
 					.from(ownerWeeklyAvailability)
-					.where(eq(ownerWeeklyAvailability.ownerId, service.ownerId));
-				const availabilityByDay = new Map(
-					availabilityRows.map((day) => [day.dayOfWeek, day])
-				);
-				const weeklyAvailability = Array.from({ length: 7 }, (_, dayOfWeek) =>
-					availabilityByDay.get(dayOfWeek) ?? {
-						dayOfWeek,
-						isAvailable: false,
-						startMinute: 480,
-						endMinute: 1020
-					}
-				);
+					.where(eq(ownerWeeklyAvailability.ownerId, service.ownerId))
+					.orderBy(asc(ownerWeeklyAvailability.dayOfWeek), asc(ownerWeeklyAvailability.startMinute));
+				const availabilityByDay = new Map<number, { startMinute: number; endMinute: number }[]>();
+				for (const { dayOfWeek, startMinute, endMinute } of availabilityRows) {
+					const intervals = availabilityByDay.get(dayOfWeek) ?? [];
+					intervals.push({ startMinute, endMinute });
+					availabilityByDay.set(dayOfWeek, intervals);
+				}
+				const weeklyAvailability = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+					dayOfWeek,
+					intervals: availabilityByDay.get(dayOfWeek) ?? []
+				}));
 				const viewerHasReview =
 					viewer &&
 					(

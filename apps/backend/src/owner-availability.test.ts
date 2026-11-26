@@ -14,9 +14,7 @@ describe('owner availability API without a database', () => {
 				body: JSON.stringify({
 					days: Array.from({ length: 7 }, (_, dayOfWeek) => ({
 						dayOfWeek,
-						isAvailable: false,
-						startMinute: 480,
-						endMinute: 1020
+						intervals: []
 					}))
 				})
 			})
@@ -36,9 +34,7 @@ describe('owner availability API without a database', () => {
 				body: JSON.stringify({
 					days: Array.from({ length: 6 }, (_, dayOfWeek) => ({
 						dayOfWeek,
-						isAvailable: true,
-						startMinute: 480,
-						endMinute: 1020
+						intervals: [{ startMinute: 480, endMinute: 1020 }]
 					}))
 				})
 			})
@@ -62,8 +58,7 @@ describe('owner availability API without a database', () => {
 				body: JSON.stringify({
 					date: '2030-01-03',
 					isAvailable: false,
-					startMinute: 480,
-					endMinute: 1020
+					intervals: []
 				})
 			})
 		);
@@ -80,8 +75,7 @@ describe('owner availability API without a database', () => {
 				body: JSON.stringify({
 					date: '2030-01-03',
 					isAvailable: true,
-					startMinute: 1500,
-					endMinute: 1020
+					intervals: [{ startMinute: 1500, endMinute: 1020 }]
 				})
 			})
 		);

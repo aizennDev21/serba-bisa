@@ -255,14 +255,14 @@ Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status
 
 ### 5.10 Ketersediaan dan jadwal pesanan
 
-- **FR-60:** Owner dapat mengatur satu rentang ketersediaan mingguan per hari untuk seluruh jasa miliknya; hari dapat ditandai libur.
+- **FR-60:** Owner dapat mengatur beberapa rentang ketersediaan mingguan yang tidak tumpang tindih per hari untuk seluruh jasa miliknya; hari tanpa rentang dianggap libur.
 - **FR-61:** Jadwal menggunakan zona waktu WIB (Asia/Jakarta) dan slot booking tetap satu jam yang dimulai pada menit 00.
 - **FR-62:** Penyewa dapat mengajukan jadwal opsional yang berada di dalam rentang ketersediaan owner; server memvalidasi waktu dan zona jadwal.
 - **FR-63:** Owner hanya dapat menerima maksimal satu pesanan terjadwal pada slot yang sama, termasuk pesanan pada listing berbeda; batas ini juga dijaga database untuk menghadapi permintaan bersamaan.
 - **FR-64:** Perubahan jadwal mingguan ditolak bila menghapus ketersediaan bagi pesanan masa depan yang sudah diterima.
 - **FR-65:** Permintaan tanpa waktu tertentu tetap dapat diajukan dan ditinjau owner tanpa reservasi slot.
 - **FR-66:** Sebelum mengajukan jadwal, penyewa dapat memilih tanggal dan melihat slot satu jam yang belum diterima untuk owner; server tetap memvalidasi ulang saat permintaan diajukan.
-- **FR-67:** Owner dapat membuat pengecualian ketersediaan untuk tanggal tertentu hingga 365 hari ke depan, baik dengan menandai libur maupun mengganti rentang jam mingguan; pengecualian menggantikan jadwal mingguan pada tanggal tersebut.
+- **FR-67:** Owner dapat membuat pengecualian ketersediaan untuk tanggal tertentu hingga 365 hari ke depan, baik dengan menandai libur maupun mengganti rentang jam mingguan dengan beberapa rentang yang tidak tumpang tindih; pengecualian menggantikan jadwal mingguan pada tanggal tersebut.
 - **FR-68:** Perubahan atau penghapusan pengecualian ditolak jika akan bertentangan dengan pesanan terjadwal yang sudah diterima; endpoint slot publik dan validasi booking menerapkan pengecualian yang sama.
 
 ## 6. Kebutuhan Non-Fungsional

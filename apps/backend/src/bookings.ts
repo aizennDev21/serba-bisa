@@ -58,6 +58,16 @@ function getJakartaDate(date: Date): string {
 	return jakartaDateFormatter.format(date);
 }
 
+function isSlotAvailable(
+	startMinute: number,
+	intervals: { startMinute: number; endMinute: number }[]
+): boolean {
+	return intervals.some(
+		(interval) =>
+			startMinute >= interval.startMinute && startMinute + 60 <= interval.endMinute
+	);
+}
+
 function isAcceptedSlotConflict(error: unknown): boolean {
 	if (typeof error !== 'object' || error === null) return false;
 	if (
@@ -92,7 +102,7 @@ async function updateBookingStatus(
 			if (!slot || booking.requestedAt.getTime() <= Date.now()) {
 				return { error: 'invalid-slot' as const };
 			}
-			const [exception] = await tx
+			const exceptions = await tx
 				.select({
 					isAvailable: ownerAvailabilityExceptions.isAvailable,
 					startMinute: ownerAvailabilityExceptions.startMinute,
@@ -104,13 +114,11 @@ async function updateBookingStatus(
 						eq(ownerAvailabilityExceptions.ownerId, booking.ownerId),
 						eq(ownerAvailabilityExceptions.serviceDate, getJakartaDate(booking.requestedAt))
 					)
-				)
-				.limit(1);
-			const [weeklyAvailability] = exception
+				);
+			const weeklyAvailability = exceptions.length
 				? []
 				: await tx
 						.select({
-							isAvailable: ownerWeeklyAvailability.isAvailable,
 							startMinute: ownerWeeklyAvailability.startMinute,
 							endMinute: ownerWeeklyAvailability.endMinute
 						})
@@ -120,14 +128,11 @@ async function updateBookingStatus(
 								eq(ownerWeeklyAvailability.ownerId, booking.ownerId),
 								eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
 							)
-						)
-						.limit(1);
-			const availability = exception ?? weeklyAvailability;
-			if (
-				!availability?.isAvailable ||
-				slot.startMinute < availability.startMinute ||
-				slot.endMinute > availability.endMinute
-			) {
+						);
+			const intervals = exceptions.length
+				? exceptions.filter(({ isAvailable }) => isAvailable)
+				: weeklyAvailability;
+			if (!isSlotAvailable(slot.startMinute, intervals)) {
 				return { error: 'outside-availability' as const };
 			}
 			const [acceptedBooking] = await tx
@@ -253,7 +258,7 @@ export function createBookingsRouter(database?: Database) {
 					return { error: { code: 'SERVICE_NOT_FOUND', message: 'Jasa yang dipilih tidak tersedia.' } };
 				}
 
-				const [exception] = await database
+				const exceptions = await database
 					.select({
 						isAvailable: ownerAvailabilityExceptions.isAvailable,
 						startMinute: ownerAvailabilityExceptions.startMinute,
@@ -265,13 +270,11 @@ export function createBookingsRouter(database?: Database) {
 							eq(ownerAvailabilityExceptions.ownerId, service.ownerId),
 							eq(ownerAvailabilityExceptions.serviceDate, query.date)
 						)
-					)
-					.limit(1);
-				const [weeklyAvailability] = exception
+					);
+				const weeklyAvailability = exceptions.length
 					? []
 					: await database
 							.select({
-								isAvailable: ownerWeeklyAvailability.isAvailable,
 								startMinute: ownerWeeklyAvailability.startMinute,
 								endMinute: ownerWeeklyAvailability.endMinute
 							})
@@ -281,9 +284,10 @@ export function createBookingsRouter(database?: Database) {
 									eq(ownerWeeklyAvailability.ownerId, service.ownerId),
 									eq(ownerWeeklyAvailability.dayOfWeek, slotDay.dayOfWeek)
 								)
-							)
-							.limit(1);
-				const availability = exception ?? weeklyAvailability;
+							);
+				const intervals = exceptions.length
+					? exceptions.filter(({ isAvailable }) => isAvailable)
+					: weeklyAvailability;
 				const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 				const occupiedRows = await database
 					.select({ requestedAt: bookings.requestedAt })
@@ -302,41 +306,29 @@ export function createBookingsRouter(database?: Database) {
 					)
 				);
 				const currentTime = Date.now();
-				const slots =
-					availability?.isAvailable
-						? Array.from(
-								{
-									length:
-										(availability.endMinute - availability.startMinute) / 60
-								},
-								(_, index) => {
-									const startMinute = availability.startMinute + index * 60;
-									const startAt = new Date(
-										dayStart.getTime() + startMinute * 60_000
-									);
-									return {
-										startAt,
-										startMinute,
-										endMinute: startMinute + 60
-									};
-								}
-							)
-								.filter(
-									(slot) =>
-										slot.startAt.getTime() > currentTime &&
-										!occupied.has(slot.startAt.toISOString())
-								)
-								.map((slot) => ({
-									startAt: slot.startAt.toISOString(),
-									label: `${String(Math.floor(slot.startMinute / 60)).padStart(2, '0')}:00–${String(Math.floor(slot.endMinute / 60)).padStart(2, '0')}:00 WIB`
-								}))
-						: [];
+				const slots = intervals
+					.flatMap(({ startMinute, endMinute }) =>
+						Array.from({ length: (endMinute - startMinute) / 60 }, (_, index) => {
+							const slotStart = startMinute + index * 60;
+							const startAt = new Date(dayStart.getTime() + slotStart * 60_000);
+							return { startAt, startMinute: slotStart, endMinute: slotStart + 60 };
+						})
+					)
+					.filter(
+						(slot) =>
+							slot.startAt.getTime() > currentTime &&
+							!occupied.has(slot.startAt.toISOString())
+					)
+					.map((slot) => ({
+						startAt: slot.startAt.toISOString(),
+						label: `${String(Math.floor(slot.startMinute / 60)).padStart(2, '0')}:00–${String(Math.floor(slot.endMinute / 60)).padStart(2, '0')}:00 WIB`
+					}));
 
 				return {
 					data: {
 						date: query.date,
 						timezone: 'Asia/Jakarta',
-						schedule: exception ? 'exception' : 'weekly',
+						schedule: exceptions.length ? 'exception' : 'weekly',
 						slots
 					}
 				};
@@ -463,7 +455,7 @@ export function createBookingsRouter(database?: Database) {
 							}
 						};
 					}
-					const [exception] = await database
+					const exceptions = await database
 						.select({
 							isAvailable: ownerAvailabilityExceptions.isAvailable,
 							startMinute: ownerAvailabilityExceptions.startMinute,
@@ -478,13 +470,11 @@ export function createBookingsRouter(database?: Database) {
 									getJakartaDate(requestedAt)
 								)
 							)
-						)
-						.limit(1);
-					const [weeklyAvailability] = exception
+						);
+					const weeklyAvailability = exceptions.length
 						? []
 						: await database
 								.select({
-									isAvailable: ownerWeeklyAvailability.isAvailable,
 									startMinute: ownerWeeklyAvailability.startMinute,
 									endMinute: ownerWeeklyAvailability.endMinute
 								})
@@ -494,14 +484,11 @@ export function createBookingsRouter(database?: Database) {
 										eq(ownerWeeklyAvailability.ownerId, service.ownerId),
 										eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
 									)
-								)
-								.limit(1);
-					const availability = exception ?? weeklyAvailability;
-					if (
-						!availability?.isAvailable ||
-						slot.startMinute < availability.startMinute ||
-						slot.endMinute > availability.endMinute
-					) {
+								);
+					const intervals = exceptions.length
+						? exceptions.filter(({ isAvailable }) => isAvailable)
+						: weeklyAvailability;
+					if (!isSlotAvailable(slot.startMinute, intervals)) {
 						set.status = 409;
 						return {
 							error: {
@@ -537,7 +524,7 @@ export function createBookingsRouter(database?: Database) {
 					if (requestedAt) {
 						const slot = getJakartaSlot(requestedAt);
 						if (!slot) return { error: 'invalid-slot' as const };
-						const [exception] = await tx
+						const exceptions = await tx
 							.select({
 								isAvailable: ownerAvailabilityExceptions.isAvailable,
 								startMinute: ownerAvailabilityExceptions.startMinute,
@@ -552,13 +539,11 @@ export function createBookingsRouter(database?: Database) {
 										getJakartaDate(requestedAt)
 									)
 								)
-							)
-							.limit(1);
-						const [weeklyAvailability] = exception
+							);
+						const weeklyAvailability = exceptions.length
 							? []
 							: await tx
 									.select({
-										isAvailable: ownerWeeklyAvailability.isAvailable,
 										startMinute: ownerWeeklyAvailability.startMinute,
 										endMinute: ownerWeeklyAvailability.endMinute
 									})
@@ -568,14 +553,11 @@ export function createBookingsRouter(database?: Database) {
 											eq(ownerWeeklyAvailability.ownerId, service.ownerId),
 											eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
 										)
-									)
-									.limit(1);
-						const availability = exception ?? weeklyAvailability;
-						if (
-							!availability?.isAvailable ||
-							slot.startMinute < availability.startMinute ||
-							slot.endMinute > availability.endMinute
-						) {
+									);
+						const intervals = exceptions.length
+							? exceptions.filter(({ isAvailable }) => isAvailable)
+							: weeklyAvailability;
+						if (!isSlotAvailable(slot.startMinute, intervals)) {
 							return { error: 'outside-availability' as const };
 						}
 						const [acceptedBooking] = await tx

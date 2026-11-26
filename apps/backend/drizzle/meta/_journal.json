@@ -78,6 +78,13 @@
       "when": 1795700835500,
       "tag": "0010_majestic_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795701474191,
+      "tag": "0011_soft_dark_beast",
+      "breakpoints": true
     }
   ]
 }

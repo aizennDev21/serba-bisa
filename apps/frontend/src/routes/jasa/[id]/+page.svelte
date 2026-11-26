@@ -114,7 +114,7 @@
 						<div class="detail-availability">
 							<strong>Ketersediaan mingguan <small>WIB</small></strong>
 							{#each data.service.weeklyAvailability as day (day.dayOfWeek)}
-								<div><span>{dayNames[day.dayOfWeek]}</span><span>{day.isAvailable ? `${formatMinute(day.startMinute)}–${formatMinute(day.endMinute)}` : 'Libur'}</span></div>
+								<div><span>{dayNames[day.dayOfWeek]}</span><span>{day.intervals.length ? day.intervals.map(({ startMinute, endMinute }) => `${formatMinute(startMinute)}–${formatMinute(endMinute)}`).join(', ') : 'Libur'}</span></div>
 							{/each}
 							<p>Pesanan terjadwal menggunakan slot satu jam.</p>
 						</div>

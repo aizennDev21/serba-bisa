@@ -5,17 +5,18 @@ import type { Actions, PageServerLoad } from './$types';
 const apiBaseUrl = BACKEND_URL.replace(/\/+$/, '');
 const dayLabels = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-type AvailabilityDay = {
-	dayOfWeek: number;
-	isAvailable: boolean;
+type AvailabilityInterval = {
 	startMinute: number;
 	endMinute: number;
+};
+type AvailabilityDay = {
+	dayOfWeek: number;
+	intervals: AvailabilityInterval[];
 };
 type AvailabilityException = {
 	date: string;
 	isAvailable: boolean;
-	startMinute: number;
-	endMinute: number;
+	intervals: AvailabilityInterval[];
 };
 type ApiResponse<T> = { data?: T; error?: { message?: string } };
 
@@ -84,23 +85,34 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const days: AvailabilityDay[] = [];
 		for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-			const startMinute = Number(form.get(`start-${dayOfWeek}`));
-			const endMinute = Number(form.get(`end-${dayOfWeek}`));
-			const isAvailable = form.get(`available-${dayOfWeek}`) === 'true';
-			if (
-				!Number.isInteger(startMinute) ||
-				!Number.isInteger(endMinute) ||
-				startMinute < 0 ||
-				startMinute > 1380 ||
-				endMinute < 60 ||
-				endMinute > 1440 ||
-				startMinute % 60 !== 0 ||
-				endMinute % 60 !== 0 ||
-				(isAvailable && endMinute <= startMinute)
-			) {
-				return fail(422, { error: `Rentang waktu hari ${dayLabels[dayOfWeek]} tidak valid.` });
+			const count = Number(form.get(`interval-count-${dayOfWeek}`));
+			if (!Number.isInteger(count) || count < 0 || count > 24) {
+				return fail(422, { error: `Jumlah rentang hari ${dayLabels[dayOfWeek]} tidak valid.` });
 			}
-			days.push({ dayOfWeek, isAvailable, startMinute, endMinute });
+			const intervals: AvailabilityInterval[] = [];
+			for (let index = 0; index < count; index++) {
+				const startMinute = Number(form.get(`start-${dayOfWeek}-${index}`));
+				const endMinute = Number(form.get(`end-${dayOfWeek}-${index}`));
+				if (
+					!Number.isInteger(startMinute) ||
+					!Number.isInteger(endMinute) ||
+					startMinute < 0 ||
+					startMinute > 1380 ||
+					endMinute < 60 ||
+					endMinute > 1440 ||
+					startMinute % 60 !== 0 ||
+					endMinute % 60 !== 0 ||
+					endMinute <= startMinute
+				) {
+					return fail(422, { error: `Rentang waktu hari ${dayLabels[dayOfWeek]} tidak valid.` });
+				}
+				intervals.push({ startMinute, endMinute });
+			}
+			intervals.sort((a, b) => a.startMinute - b.startMinute);
+			if (intervals.some((interval, index) => index > 0 && interval.startMinute < intervals[index - 1]!.endMinute)) {
+				return fail(422, { error: `Rentang waktu hari ${dayLabels[dayOfWeek]} saling bertumpuk.` });
+			}
+			days.push({ dayOfWeek, intervals });
 		}
 
 		try {
@@ -126,21 +138,35 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const date = String(form.get('date') ?? '');
 		const isAvailable = form.get('isAvailable') === 'true';
-		const startMinute = Number(form.get('startMinute'));
-		const endMinute = Number(form.get('endMinute'));
+		const count = Number(form.get('intervalCount'));
+		if (!Number.isInteger(count) || count < 0 || count > 24 || isAvailable !== (count > 0)) {
+			return fail(422, { exceptionError: 'Status pengecualian dan jumlah rentang waktunya tidak sesuai.' });
+		}
+		const intervals: AvailabilityInterval[] = [];
+		for (let index = 0; index < count; index++) {
+			const startMinute = Number(form.get(`exceptionStart-${index}`));
+			const endMinute = Number(form.get(`exceptionEnd-${index}`));
+			if (
+				!Number.isInteger(startMinute) ||
+				!Number.isInteger(endMinute) ||
+				startMinute < 0 ||
+				startMinute > 1380 ||
+				endMinute < 60 ||
+				endMinute > 1440 ||
+				startMinute % 60 !== 0 ||
+				endMinute % 60 !== 0 ||
+				endMinute <= startMinute
+			) {
+				return fail(422, { exceptionError: 'Rentang waktu pengecualian tidak valid.' });
+			}
+			intervals.push({ startMinute, endMinute });
+		}
+		intervals.sort((a, b) => a.startMinute - b.startMinute);
 		if (
 			!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-			!Number.isInteger(startMinute) ||
-			!Number.isInteger(endMinute) ||
-			startMinute < 0 ||
-			startMinute > 1380 ||
-			endMinute < 60 ||
-			endMinute > 1440 ||
-			startMinute % 60 !== 0 ||
-			endMinute % 60 !== 0 ||
-			(isAvailable && endMinute <= startMinute)
+			intervals.some((interval, index) => index > 0 && interval.startMinute < intervals[index - 1]!.endMinute)
 		) {
-			return fail(422, { error: 'Tanggal atau rentang waktu pengecualian tidak valid.' });
+			return fail(422, { exceptionError: 'Tanggal atau rentang waktu pengecualian tidak valid.' });
 		}
 		try {
 			const response = await fetch(`${apiBaseUrl}/api/owner/availability/exceptions`, {
@@ -149,7 +175,7 @@ export const actions: Actions = {
 					...authHeaders(request.headers.get('cookie')),
 					'content-type': 'application/json'
 				},
-				body: JSON.stringify({ date, isAvailable, startMinute, endMinute })
+				body: JSON.stringify({ date, isAvailable, intervals })
 			});
 			const body = (await response.json()) as ApiResponse<AvailabilityException>;
 			if (!response.ok) {
