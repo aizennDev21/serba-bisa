@@ -149,8 +149,14 @@ async function postBookingAction(
 	if (requestedLocation.length > 200) {
 		return fail(422, { bookingError: 'Lokasi maksimal 200 karakter.' });
 	}
-	const requestedAt = requestedAtInput ? new Date(requestedAtInput) : null;
-	if (requestedAt && (!Number.isFinite(requestedAt.getTime()) || requestedAt.getTime() <= Date.now())) {
+	if (requestedAtInput && !/^\d{4}-\d{2}-\d{2}T\d{2}:00$/.test(requestedAtInput)) {
+		return fail(422, { bookingError: 'Pilih jam penuh dalam zona waktu WIB.' });
+	}
+	const requestedAt = requestedAtInput ? new Date(`${requestedAtInput}:00+07:00`) : null;
+	if (
+		requestedAt &&
+		(!Number.isFinite(requestedAt.getTime()) || requestedAt.getTime() <= Date.now())
+	) {
 		return fail(422, { bookingError: 'Pilih jadwal yang berada di masa depan.' });
 	}
 

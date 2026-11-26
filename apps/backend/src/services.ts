@@ -3,7 +3,7 @@ import { Elysia, t } from 'elysia';
 
 import { getAuthenticatedUser } from './auth';
 import type { createDatabase } from './db/client';
-import { bookings, reviews, services, userRoles, users } from './db/schema';
+import { bookings, ownerWeeklyAvailability, reviews, services, userRoles, users } from './db/schema';
 import { getPublishedServiceReviews } from './reviews';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -217,6 +217,26 @@ export function createServicesRouter(database?: Database) {
 					getPublishedServiceReviews(database, params.id),
 					getAuthenticatedUser(database, request.headers.get('cookie'))
 				]);
+				const availabilityRows = await database
+					.select({
+						dayOfWeek: ownerWeeklyAvailability.dayOfWeek,
+						isAvailable: ownerWeeklyAvailability.isAvailable,
+						startMinute: ownerWeeklyAvailability.startMinute,
+						endMinute: ownerWeeklyAvailability.endMinute
+					})
+					.from(ownerWeeklyAvailability)
+					.where(eq(ownerWeeklyAvailability.ownerId, service.ownerId));
+				const availabilityByDay = new Map(
+					availabilityRows.map((day) => [day.dayOfWeek, day])
+				);
+				const weeklyAvailability = Array.from({ length: 7 }, (_, dayOfWeek) =>
+					availabilityByDay.get(dayOfWeek) ?? {
+						dayOfWeek,
+						isAvailable: false,
+						startMinute: 480,
+						endMinute: 1020
+					}
+				);
 				const viewerHasReview =
 					viewer &&
 					(
@@ -254,6 +274,7 @@ export function createServicesRouter(database?: Database) {
 						rating: Number(service.rating),
 						reviewCount: Number(service.reviewCount),
 						reviews: serviceReviews,
+						weeklyAvailability,
 						viewer: {
 							isAuthenticated: Boolean(viewer),
 							canReview:

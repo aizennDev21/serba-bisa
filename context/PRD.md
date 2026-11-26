@@ -117,8 +117,8 @@ Role dengan kewenangan tertinggi untuk mengelola operasional platform.
 
 Prioritas berikut adalah rekomendasi untuk validasi dan pengembangan bertahap, bukan komitmen scope MVP.
 
-- **P0 setelah MVP:** pelaporan pengguna/listing/ulasan, verifikasi nomor telepon atau email, notifikasi pesan baru, status pesan terkirim/dibaca, kalender ketersediaan, dan dashboard metrik dasar.
-- **P1:** kalender ketersediaan, notifikasi email/push, favorit, berbagi listing, serta foto/portofolio jasa.
+- **P0 setelah MVP:** pelaporan pengguna/listing/ulasan, verifikasi nomor telepon atau email, notifikasi pesan baru, status pesan terkirim/dibaca, dan dashboard metrik dasar.
+- **P1:** notifikasi email/push, favorit, berbagi listing, serta foto/portofolio jasa.
 - **P2:** pembayaran online, kebijakan pembatalan/refund, komisi platform, invoice, paket promosi, kupon, dan program loyalitas.
 - **P3:** aplikasi PWA yang lebih lengkap, rekomendasi personal, dukungan multi-bahasa, verifikasi penyedia, dan sistem sengketa.
 
@@ -244,7 +244,7 @@ Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status
 - **FR-52:** Penyewa dapat membatalkan permintaan yang belum diterima; penyewa maupun owner dapat membatalkan pesanan yang telah diterima.
 - **FR-53:** Owner dapat menandai pesanan diterima sebagai selesai. Pesanan yang selesai, ditolak, atau dibatalkan tidak dapat diaktifkan kembali.
 - **FR-54:** Penyewa dan owner hanya dapat melihat serta mengubah pesanan yang melibatkan akun mereka; setiap perubahan status dicatat dengan pelaku dan waktu.
-- **FR-55:** Chat tetap menjadi fitur privat terpisah dan dapat dimulai tanpa pesanan. Pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa tidak termasuk alur ini.
+- **FR-55:** Chat tetap menjadi fitur privat terpisah dan dapat dimulai tanpa pesanan. Pembayaran online, refund, komisi, dan penyelesaian sengketa tidak termasuk alur ini.
 
 ### 5.9 Notifikasi
 
@@ -252,6 +252,15 @@ Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status
 - **FR-57:** Notifikasi disimpan secara persisten, hanya dapat dibaca/ditandai dibaca oleh penerimanya, serta memiliki status baca dan waktu pembuatan.
 - **FR-58:** Notifikasi baru disampaikan realtime saat penerima terhubung; setelah reconnect, UI memuat daftar persisten dari server.
 - **FR-59:** Pengguna dapat menandai satu notifikasi atau seluruh notifikasi sebagai sudah dibaca.
+
+### 5.10 Ketersediaan dan jadwal pesanan
+
+- **FR-60:** Owner dapat mengatur satu rentang ketersediaan mingguan per hari untuk seluruh jasa miliknya; hari dapat ditandai libur.
+- **FR-61:** Jadwal menggunakan zona waktu WIB (Asia/Jakarta) dan slot booking tetap satu jam yang dimulai pada menit 00.
+- **FR-62:** Penyewa dapat mengajukan jadwal opsional yang berada di dalam rentang ketersediaan owner; server memvalidasi waktu dan zona jadwal.
+- **FR-63:** Owner hanya dapat menerima maksimal satu pesanan terjadwal pada slot yang sama, termasuk pesanan pada listing berbeda; batas ini juga dijaga database untuk menghadapi permintaan bersamaan.
+- **FR-64:** Perubahan jadwal mingguan ditolak bila menghapus ketersediaan bagi pesanan masa depan yang sudah diterima.
+- **FR-65:** Permintaan tanpa waktu tertentu tetap dapat diajukan dan ditinjau owner tanpa reservasi slot.
 
 ## 6. Kebutuhan Non-Fungsional
 
@@ -389,6 +398,7 @@ Relasi, batas retensi, penghapusan/anonimisasi, indeks, serta aturan jumlah bala
 11. Peta/lokasi ditampilkan tanpa meminta geolokasi perangkat sebelum pengguna memberi izin.
 12. Halaman utama diuji di viewport mobile dan desktop, dapat digunakan dengan keyboard, dan metrik performa awal dicatat terhadap target NFR.
 13. Pemohon pesanan dan pihak terkait menerima notifikasi persisten saat permintaan/status berubah; akses notifikasi dibatasi pada penerima.
+14. Owner dapat mengatur jadwal mingguan; pesanan terjadwal hanya dapat dibuat dan diterima pada waktu tersedia dan slot accepted tidak dapat bentrok.
 
 ## 10. Metrik Keberhasilan
 

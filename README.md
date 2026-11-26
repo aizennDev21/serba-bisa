@@ -68,14 +68,17 @@ Backend memeriksa sesi, role, status jasa, pesanan selesai, dan kepemilikan. Own
 
 ## Pemesanan jasa
 
-Penyewa dapat mengajukan permintaan dari detail jasa aktif dengan rincian kebutuhan serta jadwal dan lokasi opsional. Owner dapat menerima atau menolak permintaan, lalu menandai pekerjaan yang diterima sebagai selesai. Penyewa dapat membatalkan permintaan yang belum diterima; kedua pihak dapat membatalkan pesanan yang telah diterima dengan alasan. Perubahan status disimpan bersama audit pelaku, waktu, dan alasan.
+Penyewa dapat mengajukan permintaan dari detail jasa aktif dengan rincian kebutuhan serta jadwal dan lokasi opsional. Owner dapat menerima atau menolak permintaan, lalu menandai pekerjaan yang diterima sebagai selesai. Penyewa dapat membatalkan permintaan yang belum diterima; kedua pihak dapat membatalkan pesanan yang telah diterima dengan alasan. Perubahan status disimpan bersama audit pelaku, waktu, dan alasan. Owner dapat mengatur satu rentang ketersediaan per hari di `/owner/ketersediaan`; pilihan jadwal dan pemeriksaan bentrok menggunakan zona waktu WIB serta slot satu jam mulai pada pergantian jam.
 
 - `POST /api/bookings` — membuat permintaan untuk jasa aktif; harga dan nama jasa disimpan sebagai snapshot.
 - `GET /api/bookings` — menampilkan maksimal 100 pesanan milik penyewa atau owner yang sedang masuk.
 - `PATCH /api/bookings/:bookingId/status` — mengubah status sesuai role, kepemilikan, dan transisi yang diizinkan.
 - `/pesanan` — dashboard untuk melihat dan mengelola permintaan pesanan.
+- `/owner/ketersediaan` — pengaturan jadwal mingguan owner.
 
-Alur ini tidak memproses pembayaran atau menetapkan tagihan. Harga snapshot adalah informasi dari listing; pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa belum tersedia. Chat tetap terpisah dan tidak membutuhkan pesanan.
+Pesanan yang meminta jadwal di luar rentang mingguan ditolak. Owner hanya dapat menerima satu pesanan terjadwal per slot waktu, termasuk lintas jasa; indeks unik database juga melindungi dari permintaan accept serentak. Perubahan ketersediaan yang akan bertentangan dengan pesanan accepted masa depan ditolak. Permintaan tanpa waktu tetap didukung dan tidak menahan slot.
+
+Alur ini tidak memproses pembayaran atau menetapkan tagihan. Harga snapshot adalah informasi dari listing; pembayaran online, refund, komisi, dan penyelesaian sengketa belum tersedia. Chat tetap terpisah dan tidak membutuhkan pesanan.
 
 ## Notifikasi pesanan
 

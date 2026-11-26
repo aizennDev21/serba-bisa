@@ -42,7 +42,7 @@
 						{#if booking.statusReason}<p class="booking-reason">Catatan status: {booking.statusReason}</p>{/if}
 						<div class="booking-meta">
 							<span>{formatServicePrice(booking.price)} {formatPriceUnit(booking.priceUnit)}</span>
-							{#if booking.requestedAt}<span>Jadwal: {new Date(booking.requestedAt).toLocaleString('id-ID')}</span>{/if}
+							{#if booking.requestedAt}<span>Jadwal WIB: {new Date(booking.requestedAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</span>{/if}
 							{#if booking.requestedLocation}<span>Lokasi: {booking.requestedLocation}</span>{/if}
 						</div>
 						<div class="booking-actions">
@@ -58,7 +58,7 @@
 								<form method="POST" action="?/transition"><input type="hidden" name="bookingId" value={booking.id} /><input type="hidden" name="status" value="cancelled" /><label for={`cancel-${booking.id}`}>Alasan pembatalan</label><input id={`cancel-${booking.id}`} name="reason" minlength="8" maxlength="500" required placeholder="Jelaskan alasan, minimal 8 karakter" /><button class="booking-secondary" type="submit">Batalkan permintaan</button></form>
 							{/if}
 						</div>
-						<small class="booking-date">Diajukan {new Date(booking.createdAt).toLocaleString('id-ID')}</small>
+						<small class="booking-date">Diajukan {new Date(booking.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB</small>
 					</article>
 				{/each}
 			</div>

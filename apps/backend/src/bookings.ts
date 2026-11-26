@@ -8,6 +8,7 @@ import {
 	bookingStatusAuditLogs,
 	bookings,
 	notifications,
+	ownerWeeklyAvailability,
 	services,
 	userRoles,
 	users
@@ -15,6 +16,142 @@ import {
 import { publishNotification } from './notifications';
 
 type Database = ReturnType<typeof createDatabase>['db'];
+
+const jakartaTimeFormatter = new Intl.DateTimeFormat('en-US', {
+	timeZone: 'Asia/Jakarta',
+	weekday: 'short',
+	hour: '2-digit',
+	minute: '2-digit',
+	hourCycle: 'h23'
+});
+const weekdayNumbers: Record<string, number> = {
+	Sun: 0,
+	Mon: 1,
+	Tue: 2,
+	Wed: 3,
+	Thu: 4,
+	Fri: 5,
+	Sat: 6
+};
+
+function getJakartaSlot(date: Date): { dayOfWeek: number; startMinute: number; endMinute: number } | null {
+	if (!Number.isFinite(date.getTime()) || date.getTime() % 60_000 !== 0) return null;
+	const parts = Object.fromEntries(
+		jakartaTimeFormatter.formatToParts(date).map(({ type, value }) => [type, value])
+	);
+	const dayOfWeek = weekdayNumbers[parts.weekday ?? ''];
+	const hour = Number(parts.hour);
+	const minute = Number(parts.minute);
+	if (dayOfWeek === undefined || !Number.isInteger(hour) || minute !== 0) return null;
+	const startMinute = hour * 60;
+	return { dayOfWeek, startMinute, endMinute: startMinute + 60 };
+}
+
+function isAcceptedSlotConflict(error: unknown): boolean {
+	if (typeof error !== 'object' || error === null) return false;
+	if (
+		'code' in error &&
+		error.code === '23505' &&
+		'constraint' in error &&
+		error.constraint === 'bookings_owner_accepted_slot_unique_idx'
+	) {
+		return true;
+	}
+	return 'cause' in error && isAcceptedSlotConflict(error.cause);
+}
+
+async function updateBookingStatus(
+	database: Database,
+	booking: {
+		id: string;
+		seekerId: string;
+		ownerId: string;
+		status: typeof bookings.$inferSelect.status;
+		requestedAt: Date | null;
+	},
+	actor: NonNullable<Awaited<ReturnType<typeof getAuthenticatedUser>>>,
+	isSeeker: boolean,
+	newStatus: 'accepted' | 'declined' | 'cancelled' | 'completed',
+	reason: string | null
+) {
+	return database.transaction(async (tx) => {
+		if (newStatus === 'accepted' && booking.requestedAt) {
+			await tx.select({ id: users.id }).from(users).where(eq(users.id, booking.ownerId)).for('update');
+			const slot = getJakartaSlot(booking.requestedAt);
+			if (!slot || booking.requestedAt.getTime() <= Date.now()) {
+				return { error: 'invalid-slot' as const };
+			}
+			const [availability] = await tx
+				.select({
+					isAvailable: ownerWeeklyAvailability.isAvailable,
+					startMinute: ownerWeeklyAvailability.startMinute,
+					endMinute: ownerWeeklyAvailability.endMinute
+				})
+				.from(ownerWeeklyAvailability)
+				.where(
+					and(
+						eq(ownerWeeklyAvailability.ownerId, booking.ownerId),
+						eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+					)
+				)
+				.limit(1);
+			if (
+				!availability?.isAvailable ||
+				slot.startMinute < availability.startMinute ||
+				slot.endMinute > availability.endMinute
+			) {
+				return { error: 'outside-availability' as const };
+			}
+			const [acceptedBooking] = await tx
+				.select({ id: bookings.id })
+				.from(bookings)
+				.where(
+					and(
+						eq(bookings.ownerId, booking.ownerId),
+						eq(bookings.requestedAt, booking.requestedAt),
+						eq(bookings.status, 'accepted')
+					)
+				)
+				.limit(1);
+			if (acceptedBooking) return { error: 'slot-taken' as const };
+		}
+		const [changed] = await tx
+			.update(bookings)
+			.set({ status: newStatus, statusReason: reason, updatedAt: new Date() })
+			.where(and(eq(bookings.id, booking.id), eq(bookings.status, booking.status)))
+			.returning({ id: bookings.id, status: bookings.status, updatedAt: bookings.updatedAt });
+		if (!changed) return null;
+		await tx.insert(bookingStatusAuditLogs).values({
+			bookingId: booking.id,
+			actorId: actor.id,
+			previousStatus: booking.status,
+			newStatus,
+			reason
+		});
+		const recipientId = isSeeker ? booking.ownerId : booking.seekerId;
+		const statusLabels: Record<typeof newStatus, string> = {
+			accepted: 'diterima',
+			declined: 'ditolak',
+			cancelled: 'dibatalkan',
+			completed: 'ditandai selesai'
+		};
+		const [notification] = await tx
+			.insert(notifications)
+			.values({
+				userId: recipientId,
+				bookingId: booking.id,
+				type: 'booking_status_changed',
+				title: 'Status pesanan diperbarui',
+				message: `${actor.displayName} ${statusLabels[newStatus]} pesanan.${reason ? ` Alasan: ${reason}` : ''}`
+			})
+			.returning({
+				id: notifications.id,
+				type: notifications.type,
+				createdAt: notifications.createdAt
+			});
+		return { changed, notification, recipientId };
+	});
+}
 
 const bookingParams = t.Object({ bookingId: t.String({ format: 'uuid' }) });
 const createBookingBody = t.Object({
@@ -110,7 +247,8 @@ export function createBookingsRouter(database?: Database) {
 					set.status = 422;
 					return { error: { code: 'INVALID_REQUEST_MESSAGE', message: 'Detail permintaan minimal 20 karakter.' } };
 				}
-				if (body.requestedAt && new Date(body.requestedAt).getTime() <= Date.now()) {
+				const requestedAt = body.requestedAt ? new Date(body.requestedAt) : null;
+				if (requestedAt && requestedAt.getTime() <= Date.now()) {
 					set.status = 422;
 					return { error: { code: 'INVALID_REQUESTED_AT', message: 'Jadwal yang diminta harus berada di masa depan.' } };
 				}
@@ -143,8 +281,105 @@ export function createBookingsRouter(database?: Database) {
 					set.status = 403;
 					return { error: { code: 'OWNER_CANNOT_BOOK', message: 'Penyedia tidak dapat memesan jasanya sendiri.' } };
 				}
+				if (requestedAt) {
+					const slot = getJakartaSlot(requestedAt);
+					if (!slot) {
+						set.status = 422;
+						return {
+							error: {
+								code: 'INVALID_BOOKING_SLOT',
+								message: 'Jadwal harus dimulai tepat pada pergantian jam penuh.'
+							}
+						};
+					}
+					const [availability] = await database
+						.select({
+							isAvailable: ownerWeeklyAvailability.isAvailable,
+							startMinute: ownerWeeklyAvailability.startMinute,
+							endMinute: ownerWeeklyAvailability.endMinute
+						})
+						.from(ownerWeeklyAvailability)
+						.where(
+							and(
+								eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+								eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+							)
+						)
+						.limit(1);
+					if (
+						!availability?.isAvailable ||
+						slot.startMinute < availability.startMinute ||
+						slot.endMinute > availability.endMinute
+					) {
+						set.status = 409;
+						return {
+							error: {
+								code: 'OUTSIDE_OWNER_AVAILABILITY',
+								message: 'Waktu yang dipilih berada di luar jadwal ketersediaan penyedia.'
+							}
+						};
+					}
+					const [acceptedBooking] = await database
+						.select({ id: bookings.id })
+						.from(bookings)
+						.where(
+							and(
+								eq(bookings.ownerId, service.ownerId),
+								eq(bookings.requestedAt, requestedAt),
+								eq(bookings.status, 'accepted')
+							)
+						)
+						.limit(1);
+					if (acceptedBooking) {
+						set.status = 409;
+						return {
+							error: {
+								code: 'BOOKING_SLOT_TAKEN',
+								message: 'Jadwal tersebut sudah dipesan. Pilih waktu yang berbeda.'
+							}
+						};
+					}
+				}
 
 				const booking = await database.transaction(async (tx) => {
+					await tx.select({ id: users.id }).from(users).where(eq(users.id, service.ownerId)).for('update');
+					if (requestedAt) {
+						const slot = getJakartaSlot(requestedAt);
+						if (!slot) return { error: 'invalid-slot' as const };
+						const [availability] = await tx
+							.select({
+								isAvailable: ownerWeeklyAvailability.isAvailable,
+								startMinute: ownerWeeklyAvailability.startMinute,
+								endMinute: ownerWeeklyAvailability.endMinute
+							})
+							.from(ownerWeeklyAvailability)
+							.where(
+								and(
+									eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+									eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+								)
+							)
+							.limit(1);
+						if (
+							!availability?.isAvailable ||
+							slot.startMinute < availability.startMinute ||
+							slot.endMinute > availability.endMinute
+						) {
+							return { error: 'outside-availability' as const };
+						}
+						const [acceptedBooking] = await tx
+							.select({ id: bookings.id })
+							.from(bookings)
+							.where(
+								and(
+									eq(bookings.ownerId, service.ownerId),
+									eq(bookings.requestedAt, requestedAt),
+									eq(bookings.status, 'accepted')
+								)
+							)
+							.limit(1);
+						if (acceptedBooking) return { error: 'slot-taken' as const };
+					}
 					const [created] = await tx
 						.insert(bookings)
 						.values({
@@ -155,7 +390,7 @@ export function createBookingsRouter(database?: Database) {
 							price: service.price,
 							priceUnit: service.priceUnit,
 							requestMessage,
-							requestedAt: body.requestedAt ? new Date(body.requestedAt) : null,
+							requestedAt,
 							requestedLocation
 						})
 						.returning({
@@ -181,6 +416,23 @@ export function createBookingsRouter(database?: Database) {
 						});
 					return { booking: created, notification };
 				});
+				if (booking && 'error' in booking) {
+					set.status = booking.error === 'invalid-slot' ? 422 : 409;
+					return {
+						error: {
+							code: booking.error === 'invalid-slot'
+								? 'INVALID_BOOKING_SLOT'
+								: booking.error === 'slot-taken'
+									? 'BOOKING_SLOT_TAKEN'
+									: 'OUTSIDE_OWNER_AVAILABILITY',
+							message: booking.error === 'invalid-slot'
+								? 'Jadwal harus dimulai tepat pada pergantian jam penuh.'
+								: booking.error === 'slot-taken'
+									? 'Jadwal tersebut sudah dipesan. Pilih waktu yang berbeda.'
+									: 'Waktu yang dipilih berada di luar jadwal ketersediaan penyedia.'
+						}
+					};
+				}
 				if (!booking?.booking || !booking.notification) {
 					set.status = 500;
 					return { error: { code: 'BOOKING_CREATE_FAILED', message: 'Permintaan pesanan tidak dapat disimpan.' } };
@@ -214,7 +466,8 @@ export function createBookingsRouter(database?: Database) {
 						id: bookings.id,
 						seekerId: bookings.seekerId,
 						ownerId: bookings.ownerId,
-						status: bookings.status
+						status: bookings.status,
+						requestedAt: bookings.requestedAt
 					})
 					.from(bookings)
 					.where(eq(bookings.id, params.bookingId))
@@ -252,43 +505,37 @@ export function createBookingsRouter(database?: Database) {
 					};
 				}
 
-				const updated = await database.transaction(async (tx) => {
-					const [changed] = await tx
-						.update(bookings)
-						.set({ status: body.status, statusReason: reason, updatedAt: new Date() })
-						.where(and(eq(bookings.id, booking.id), eq(bookings.status, booking.status)))
-						.returning({ id: bookings.id, status: bookings.status, updatedAt: bookings.updatedAt });
-					if (!changed) return null;
-					await tx.insert(bookingStatusAuditLogs).values({
-						bookingId: booking.id,
-						actorId: actor.id,
-						previousStatus: booking.status,
-						newStatus: body.status,
-						reason
-					});
-					const recipientId = isSeeker ? booking.ownerId : booking.seekerId;
-					const statusLabels: Record<typeof body.status, string> = {
-						accepted: 'diterima',
-						declined: 'ditolak',
-						cancelled: 'dibatalkan',
-						completed: 'ditandai selesai'
+				let updated: Awaited<ReturnType<typeof updateBookingStatus>> | null = null;
+				try {
+					updated = await updateBookingStatus(database, booking, actor, isSeeker, body.status, reason);
+				} catch (cause) {
+					if (!isAcceptedSlotConflict(cause)) throw cause;
+					set.status = 409;
+					return {
+						error: {
+							code: 'BOOKING_SLOT_TAKEN',
+							message: 'Jadwal tersebut baru saja diterima untuk pesanan lain. Pilih waktu yang berbeda.'
+						}
 					};
-					const [notification] = await tx
-						.insert(notifications)
-						.values({
-							userId: recipientId,
-							bookingId: booking.id,
-							type: 'booking_status_changed',
-							title: 'Status pesanan diperbarui',
-							message: `${actor.displayName} ${statusLabels[body.status]} pesanan.${reason ? ` Alasan: ${reason}` : ''}`
-						})
-						.returning({
-							id: notifications.id,
-							type: notifications.type,
-							createdAt: notifications.createdAt
-						});
-					return { changed, notification, recipientId };
-				});
+				}
+				if (updated && 'error' in updated && updated.error) {
+					set.status = 409;
+					const errors = {
+						'invalid-slot': {
+							code: 'INVALID_BOOKING_SLOT',
+							message: 'Jadwal pesanan sudah lewat atau tidak valid.'
+						},
+						'outside-availability': {
+							code: 'OUTSIDE_OWNER_AVAILABILITY',
+							message: 'Jadwal sudah tidak tersedia. Minta penyewa memilih waktu lain.'
+						},
+						'slot-taken': {
+							code: 'BOOKING_SLOT_TAKEN',
+							message: 'Jadwal tersebut sudah diterima untuk pesanan lain.'
+						}
+					};
+					return { error: errors[updated.error] };
+				}
 				if (!updated?.changed || !updated.notification) {
 					set.status = 409;
 					return { error: { code: 'BOOKING_ALREADY_CHANGED', message: 'Status pesanan baru saja berubah. Muat ulang halaman.' } };

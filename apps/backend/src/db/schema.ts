@@ -4,6 +4,7 @@ import {
 	pgTable,
 	index,
 	uniqueIndex,
+	boolean,
 	primaryKey,
 	integer,
 	numeric,
@@ -285,6 +286,9 @@ export const bookings = pgTable(
 		index('bookings_seeker_created_at_idx').on(table.seekerId, table.createdAt),
 		index('bookings_owner_created_at_idx').on(table.ownerId, table.createdAt),
 		index('bookings_service_status_idx').on(table.serviceId, table.status),
+		uniqueIndex('bookings_owner_accepted_slot_unique_idx')
+			.on(table.ownerId, table.requestedAt)
+			.where(sql`${table.status} = 'accepted' and ${table.requestedAt} is not null`),
 		check('bookings_price_nonnegative_check', sql`${table.price} >= 0`)
 	]
 );
@@ -326,5 +330,36 @@ export const notifications = pgTable(
 	(table) => [
 		index('notifications_user_created_at_idx').on(table.userId, table.createdAt),
 		index('notifications_user_read_at_idx').on(table.userId, table.readAt)
+	]
+);
+
+export const ownerWeeklyAvailability = pgTable(
+	'owner_weekly_availability',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		dayOfWeek: integer('day_of_week').notNull(),
+		isAvailable: boolean('is_available').notNull().default(false),
+		startMinute: integer('start_minute').notNull().default(480),
+		endMinute: integer('end_minute').notNull().default(1020),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		uniqueIndex('owner_weekly_availability_owner_day_unique_idx').on(table.ownerId, table.dayOfWeek),
+		check('owner_weekly_availability_day_range_check', sql`${table.dayOfWeek} between 0 and 6`),
+		check(
+			'owner_weekly_availability_start_minute_check',
+			sql`${table.startMinute} between 0 and 1380 and ${table.startMinute} % 60 = 0`
+		),
+		check(
+			'owner_weekly_availability_end_minute_check',
+			sql`${table.endMinute} between 60 and 1440 and ${table.endMinute} % 60 = 0`
+		),
+		check(
+			'owner_weekly_availability_interval_check',
+			sql`not ${table.isAvailable} or ${table.endMinute} > ${table.startMinute}`
+		)
 	]
 );

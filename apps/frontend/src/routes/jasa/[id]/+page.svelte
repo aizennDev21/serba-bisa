@@ -3,6 +3,11 @@
 	import { formatPriceUnit, formatServicePrice } from '../../../lib/services';
 
 	let { data, form }: PageProps = $props();
+	const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+	function formatMinute(minute: number): string {
+		return minute === 1440 ? '24:00' : `${String(Math.floor(minute / 60)).padStart(2, '0')}:00`;
+	}
 </script>
 
 <svelte:head>
@@ -106,14 +111,21 @@
 						<p class="detail-sidebar-label">Harga jasa</p>
 						<div class="detail-price">{formatServicePrice(data.service.price)}<small>{formatPriceUnit(data.service.priceUnit)}</small></div>
 						<p class="detail-price-note">Harga ditampilkan sesuai informasi dari penyedia jasa.</p>
+						<div class="detail-availability">
+							<strong>Ketersediaan mingguan <small>WIB</small></strong>
+							{#each data.service.weeklyAvailability as day (day.dayOfWeek)}
+								<div><span>{dayNames[day.dayOfWeek]}</span><span>{day.isAvailable ? `${formatMinute(day.startMinute)}–${formatMinute(day.endMinute)}` : 'Libur'}</span></div>
+							{/each}
+							<p>Pesanan terjadwal menggunakan slot satu jam.</p>
+						</div>
 						{#if data.service.viewer.canStartChat}
 							<form class="detail-booking-form" method="POST" action="?/booking">
 								<h3>Ajukan pesanan</h3>
 								<p>Permintaan akan dikirim ke penyedia untuk ditinjau. Pembayaran belum tersedia di platform.</p>
 								<label for="booking-message">Ceritakan kebutuhanmu</label>
 								<textarea id="booking-message" name="requestMessage" minlength="20" maxlength="2000" required placeholder="Jelaskan pekerjaan dan kebutuhan yang perlu diketahui penyedia..." aria-describedby="booking-message-error"></textarea>
-								<label for="booking-time">Jadwal yang diinginkan <span>(opsional)</span></label>
-								<input id="booking-time" name="requestedAt" type="datetime-local" />
+								<label for="booking-time">Jadwal yang diinginkan <span>(opsional, pilih menit 00 WIB)</span></label>
+								<input id="booking-time" name="requestedAt" type="datetime-local" step="3600" />
 								<label for="booking-location">Lokasi layanan <span>(opsional)</span></label>
 								<input id="booking-location" name="requestedLocation" maxlength="200" placeholder={data.service.location} />
 								{#if form?.bookingError}<p class="detail-review-error" id="booking-message-error" role="alert">{form.bookingError}</p>{/if}
@@ -146,5 +158,6 @@
 </div>
 
 <style>
+	.detail-availability{display:grid;gap:6px;padding:12px;margin:14px 0;border-radius:10px;background:#f7f9fc}.detail-availability>strong{margin-bottom:2px;color:#526984;font-size:10px}.detail-availability>strong small{color:#8797a9;font-weight:500}.detail-availability>div{display:flex;justify-content:space-between;gap:8px;color:#71839a;font-size:9px}.detail-availability>div span:last-child{font-weight:700;color:#405873}.detail-availability>p{margin:4px 0 0;color:#8797a9;font-size:9px}
 	.detail-booking-form{display:grid;gap:8px;padding:15px;margin:17px 0;border:1px solid #dce8f7;border-radius:12px;background:#f8fbff}.detail-booking-form h3{margin:0;color:#152b49;font:600 14px Poppins,sans-serif}.detail-booking-form>p{margin:0 0 4px;color:#78889b;font-size:10px;line-height:1.55}.detail-booking-form label{margin-top:4px;color:#526984;font-size:10px;font-weight:700}.detail-booking-form label span{font-weight:400;color:#8797a9}.detail-booking-form input,.detail-booking-form textarea{width:100%;padding:10px;border:1px solid #dfe7f0;border-radius:8px;background:#fff;color:#152b49;font:inherit;font-size:11px}.detail-booking-form textarea{min-height:84px;resize:vertical}.detail-booking-form button{padding:11px;border:0;border-radius:8px;background:#2874d8;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
 </style>

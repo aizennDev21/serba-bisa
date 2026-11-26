@@ -52,7 +52,7 @@
 						<div class="notification-main">
 							<strong>{notification.title}</strong>
 							<p>{notification.message}</p>
-							<time>{new Date(notification.createdAt).toLocaleString('id-ID')}</time>
+							<time>{new Date(notification.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB</time>
 						</div>
 						<form method="POST" action="?/read">
 							<input type="hidden" name="notificationId" value={notification.id} />

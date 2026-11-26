@@ -28,6 +28,12 @@ export type ServiceReview = {
 
 export type ServiceDetail = ServiceListing & {
 	reviews: ServiceReview[];
+	weeklyAvailability: {
+		dayOfWeek: number;
+		isAvailable: boolean;
+		startMinute: number;
+		endMinute: number;
+	}[];
 	viewer: {
 		isAuthenticated: boolean;
 		canReview: boolean;
