@@ -247,7 +247,10 @@ export function createServicesRouter(database?: Database) {
 								!viewerHasReview,
 							canReply:
 								Boolean(viewer?.roles.includes('provider')) &&
-								viewer?.id === ownerId
+								viewer?.id === ownerId,
+							canStartChat:
+								Boolean(viewer?.roles.includes('seeker')) &&
+								viewer?.id !== ownerId
 						}
 					}
 				};

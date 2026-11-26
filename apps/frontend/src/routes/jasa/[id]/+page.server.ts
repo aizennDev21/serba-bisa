@@ -136,5 +136,27 @@ async function postReplyAction(
 
 export const actions: Actions = {
 	review: ({ fetch, request, params }) => postReviewAction(fetch, request, params.id),
-	reply: ({ fetch, request, params }) => postReplyAction(fetch, request, params.id)
+	reply: ({ fetch, request, params }) => postReplyAction(fetch, request, params.id),
+	chat: async ({ fetch, request, params }) => {
+		try {
+			const response = await fetch(
+				`${apiBaseUrl}/api/chat/services/${encodeURIComponent(params.id)}/conversations`,
+				{ method: 'POST', headers: cookieHeaders(request.headers.get('cookie')) }
+			);
+			const body = (await response.json()) as {
+				data?: { id: string };
+				error?: { message?: string };
+			};
+			if (!response.ok || !body.data) {
+				return fail(response.status, {
+					chatError: body.error?.message ?? 'Percakapan tidak dapat dimulai.'
+				});
+			}
+			throw redirect(303, `/chat/${body.data.id}`);
+		} catch (cause) {
+			if (cause instanceof Response) throw cause;
+			if (!(cause instanceof TypeError)) throw cause;
+			return fail(503, { chatError: 'Tidak dapat menghubungi layanan chat. Silakan coba lagi.' });
+		}
+	}
 };

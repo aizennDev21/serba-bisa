@@ -5,6 +5,7 @@ import type { createDatabase } from './db/client';
 import { createAuthRouter } from './auth';
 import { createAdminServicesRouter } from './admin-services';
 import { createAdminUsersRouter } from './admin-users';
+import { createChatRouter } from './chat';
 import { createOwnerServicesRouter } from './owner-services';
 import { createReviewsRouter } from './reviews';
 import { createServicesRouter } from './services';
@@ -17,7 +18,7 @@ export function createApp(
 	secureCookies = false
 ) {
 	return new Elysia()
-		.use(cors({ origin: frontendOrigin }))
+		.use(cors({ origin: frontendOrigin, credentials: true }))
 		.get('/api/health', () => ({
 			status: 'ok',
 			service: 'serba-bisa-api'
@@ -25,6 +26,7 @@ export function createApp(
 		.use(createAuthRouter(database, secureCookies))
 		.use(createAdminServicesRouter(database))
 		.use(createAdminUsersRouter(database))
+		.use(createChatRouter(database, frontendOrigin))
 		.use(createOwnerServicesRouter(database))
 		.use(createReviewsRouter(database))
 		.use(createServicesRouter(database));

@@ -66,6 +66,18 @@ Pada detail jasa aktif, akun penyewa yang masuk dapat memberi satu rating dan ko
 
 Backend memeriksa sesi, role, status jasa, dan kepemilikan. Owner tidak dapat mengulas jasanya sendiri; indeks unik di database menegakkan satu ulasan per penyewa/jasa dan satu balasan per ulasan. Saat ini ulasan belum diverifikasi melalui pesanan/transaksi, belum dapat diedit, dan moderasi ulasan belum tersedia; gunakan hanya dengan data sesuai kebijakan produk.
 
+## Chat privat
+
+Penyewa yang sudah masuk dapat memulai satu percakapan privat per jasa aktif dari halaman detail jasa. Owner dapat membuka inbox `/chat` untuk melihat percakapan dan membalas. Pesan teks disimpan di PostgreSQL; pesan baru dikirim melalui endpoint HTTP terautentikasi dan notifikasi realtime dikirim melalui Server-Sent Events (SSE). Konten pesan hanya diambil ulang melalui endpoint yang memeriksa peserta percakapan.
+
+- `POST /api/chat/services/:serviceId/conversations` — memulai atau membuka kembali percakapan penyewa dengan owner jasa.
+- `GET /api/chat` — inbox pengguna yang sedang masuk.
+- `GET /api/chat/:conversationId` dan `GET /api/chat/:conversationId/messages` — detail dan 50 pesan terbaru, hanya untuk peserta.
+- `POST /api/chat/:conversationId/messages` — mengirim pesan teks (maksimal 4.000 karakter).
+- `GET /api/chat/:conversationId/events` — stream SSE untuk notifikasi `new_message`, hanya bagi peserta dan origin frontend yang dikonfigurasi.
+
+Percakapan hanya antara penyewa dan owner yang terikat dengan jasa; data ulasan tidak pernah dipakai sebagai pesan. Notifikasi SSE hanya mengirim sinyal tanpa isi pesan sehingga klien mengambil isi melalui API yang memeriksa sesi dan akses peserta. Broker/pub-sub eksternal untuk menjalankan beberapa backend, status baca, lampiran, blokir/laporan pengguna, retensi/penghapusan pesan, rate limiting, dan persyaratan transaksi sebelum menghubungi owner belum tersedia. Untuk produksi multi-instance, tambahkan pub/sub bersama serta kebijakan retensi dan mitigasi spam.
+
 ## Akun dan autentikasi
 
 Halaman `/akun` menyediakan formulir pendaftaran, login, dan logout. Endpoint backend:

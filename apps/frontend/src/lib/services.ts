@@ -32,6 +32,7 @@ export type ServiceDetail = ServiceListing & {
 		isAuthenticated: boolean;
 		canReview: boolean;
 		canReply: boolean;
+		canStartChat: boolean;
 	};
 };
 

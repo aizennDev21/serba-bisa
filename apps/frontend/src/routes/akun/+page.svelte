@@ -44,6 +44,7 @@
 							<span>{role === 'seeker' ? 'Penyewa jasa' : role === 'provider' ? 'Penyedia jasa' : role}</span>
 						{/each}
 					</div>
+					<a class="account-manage-services" href="/chat">Pesan dan percakapan →</a>
 					<a class="account-manage-services" href="/owner/jasa">Kelola jasa saya →</a>
 					{#if data.user.roles.includes('admin') || data.user.roles.includes('super_admin')}
 						<a class="account-manage-services" href="/admin/jasa">Moderasi jasa →</a>

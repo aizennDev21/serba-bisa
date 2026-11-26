@@ -203,3 +203,45 @@ export const reviewReplies = pgTable(
 		index('review_replies_author_created_at_idx').on(table.authorId, table.createdAt)
 	]
 );
+
+export const conversations = pgTable(
+	'conversations',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		serviceId: uuid('service_id')
+			.notNull()
+			.references(() => services.id, { onDelete: 'restrict' }),
+		seekerId: uuid('seeker_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		uniqueIndex('conversations_service_seeker_unique_idx').on(table.serviceId, table.seekerId),
+		index('conversations_seeker_updated_at_idx').on(table.seekerId, table.updatedAt),
+		index('conversations_owner_updated_at_idx').on(table.ownerId, table.updatedAt)
+	]
+);
+
+export const chatMessages = pgTable(
+	'chat_messages',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		conversationId: uuid('conversation_id')
+			.notNull()
+			.references(() => conversations.id, { onDelete: 'cascade' }),
+		senderId: uuid('sender_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		content: text('content').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('chat_messages_conversation_created_at_idx').on(table.conversationId, table.createdAt),
+		index('chat_messages_sender_created_at_idx').on(table.senderId, table.createdAt)
+	]
+);

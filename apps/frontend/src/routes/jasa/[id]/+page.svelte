@@ -106,8 +106,16 @@
 						<p class="detail-sidebar-label">Harga jasa</p>
 						<div class="detail-price">{formatServicePrice(data.service.price)}<small>{formatPriceUnit(data.service.priceUnit)}</small></div>
 						<p class="detail-price-note">Harga ditampilkan sesuai informasi dari penyedia jasa.</p>
-						<a class="detail-contact-button" href="/akun">Masuk untuk menghubungi <span>→</span></a>
-						<p class="detail-contact-note">Chat langsung belum tersedia pada tahap ini.</p>
+						{#if data.service.viewer.canStartChat}
+							<form method="POST" action="?/chat">
+								<button class="detail-contact-button" type="submit">Chat dengan penyedia <span>→</span></button>
+							</form>
+						{:else if !data.service.viewer.isAuthenticated}
+							<a class="detail-contact-button" href="/akun">Masuk untuk menghubungi <span>→</span></a>
+						{:else if data.service.viewer.canReply}
+							<p class="detail-contact-note">Ini adalah jasa yang kamu tawarkan.</p>
+						{/if}
+						{#if form?.chatError}<p class="detail-review-error" role="alert">{form.chatError}</p>{/if}
 					</div>
 					<div class="detail-location-card"><span>⌖</span><div><strong>Lokasi layanan</strong><p>{data.service.location}</p></div></div>
 				</aside>

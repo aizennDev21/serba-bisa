@@ -43,6 +43,13 @@
       "when": 1795695404585,
       "tag": "0005_sloppy_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795696745790,
+      "tag": "0006_tearful_hellion",
+      "breakpoints": true
     }
   ]
 }
