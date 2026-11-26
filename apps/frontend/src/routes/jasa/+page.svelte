@@ -18,7 +18,7 @@
 		<div class="catalog-container catalog-header-inner">
 			<a href="/" class="catalog-brand"><span class="catalog-brand-icon">s.</span><span>serba<span>bisa</span><i>.</i></span></a>
 			<nav aria-label="Navigasi"><a href="/">Beranda</a><a href="/jasa" aria-current="page">Cari jasa</a></nav>
-			<a class="catalog-sign-in" href="/#bergabung">Masuk / Daftar</a>
+			<a class="catalog-sign-in" href="/akun">Masuk / Daftar</a>
 		</div>
 	</header>
 

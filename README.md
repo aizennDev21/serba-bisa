@@ -56,6 +56,19 @@ Daftar hanya memuat jasa dengan status `active` dan owner aktif. `limit` maksimu
 
 Jika `DATABASE_URL` belum diatur, proses API tetap dapat menjalankan health check, tetapi endpoint katalog mengembalikan HTTP 503 secara eksplisit; API tidak menggunakan fallback data tiruan.
 
+## Akun dan autentikasi
+
+Halaman `/akun` menyediakan formulir pendaftaran, login, dan logout. Endpoint backend:
+
+- `POST /api/auth/register` — membuat akun pengguna dengan kata sandi minimal 12 karakter.
+- `POST /api/auth/login` — memverifikasi kredensial dan menerbitkan sesi.
+- `GET /api/auth/me` — mengembalikan profil dan role untuk sesi aktif.
+- `POST /api/auth/logout` — mencabut sesi aktif.
+
+Kata sandi di-hash memakai Argon2id melalui `Bun.password`; token sesi acak disimpan sebagai hash di database dan dikirim melalui cookie `HttpOnly`, `SameSite=Lax`, dengan masa berlaku 14 hari. Cookie `Secure` aktif saat backend berjalan dengan `NODE_ENV=production`. Pengguna baru memperoleh kapabilitas `seeker` dan `provider`; role `admin`/`super_admin` tidak dapat dipilih melalui registrasi publik.
+
+Fondasi ini belum mencakup verifikasi email, reset kata sandi, pembatasan percobaan login, MFA, audit perubahan role, atau pembersihan berkala sesi kedaluwarsa. Jangan gunakan alur akun untuk produksi sebelum kontrol-kontrol tersebut dan kebijakan operasional ditambahkan.
+
 ## Pemeriksaan dan build
 
 ```sh

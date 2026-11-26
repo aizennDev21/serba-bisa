@@ -10,7 +10,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 
 const databaseUrl = process.env.DATABASE_URL;
 const database = databaseUrl ? createDatabase(databaseUrl) : undefined;
-const app = createApp(database?.db, frontendOrigin).listen(port);
+const app = createApp(database?.db, frontendOrigin, process.env.NODE_ENV === 'production').listen(port);
 
 console.info(`Serba Bisa API listening at ${app.server?.url}`);
 if (!database) {

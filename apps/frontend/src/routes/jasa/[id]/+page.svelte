@@ -18,7 +18,7 @@
 		<div class="catalog-container catalog-header-inner">
 			<a href="/" class="catalog-brand"><span class="catalog-brand-icon">s.</span><span>serba<span>bisa</span><i>.</i></span></a>
 			<nav aria-label="Navigasi"><a href="/">Beranda</a><a href="/jasa" aria-current="page">Cari jasa</a></nav>
-			<a class="catalog-sign-in" href="/#bergabung">Masuk / Daftar</a>
+			<a class="catalog-sign-in" href="/akun">Masuk / Daftar</a>
 		</div>
 	</header>
 
@@ -62,8 +62,8 @@
 						<p class="detail-sidebar-label">Harga jasa</p>
 						<div class="detail-price">{formatServicePrice(data.service.price)}<small>{formatPriceUnit(data.service.priceUnit)}</small></div>
 						<p class="detail-price-note">Harga ditampilkan sesuai informasi dari penyedia jasa.</p>
-						<a class="detail-contact-button" href="/#bergabung">Tanya tentang jasa <span>→</span></a>
-						<p class="detail-contact-note">Fitur chat tersedia setelah akun pengguna aktif.</p>
+						<a class="detail-contact-button" href="/akun">Masuk untuk menghubungi <span>→</span></a>
+						<p class="detail-contact-note">Chat langsung belum tersedia pada tahap ini.</p>
 					</div>
 					<div class="detail-location-card"><span>⌖</span><div><strong>Lokasi layanan</strong><p>{data.service.location}</p></div></div>
 				</aside>

@@ -149,8 +149,8 @@
 			</nav>
 
 			<div class="header-actions">
-				<a class="login-link" href="#bergabung">Masuk</a>
-				<a class="button button-small button-primary" href="#bergabung">Daftar gratis</a>
+				<a class="login-link" href="/akun">Masuk</a>
+				<a class="button button-small button-primary" href="/akun">Daftar gratis</a>
 			</div>
 
 			<details class="mobile-menu">
@@ -161,7 +161,7 @@
 					<a href="/jasa">Cari jasa</a>
 					<a href="#cara-kerja">Cara kerja</a>
 					<a href="#ulasan">Ulasan</a>
-					<a href="#bergabung">Masuk / Daftar</a>
+					<a href="/akun">Masuk / Daftar</a>
 				</nav>
 			</details>
 		</div>
@@ -338,7 +338,7 @@
 							</div>
 							<div class="service-body">
 								<div class="service-meta"><span>{service.category}</span><span class="meta-separator">·</span><span>{service.location}</span></div>
-								<a href="#bergabung" class="service-title">{service.title}</a>
+								<a href="/jasa" class="service-title">{service.title}</a>
 								<div class="service-provider"><span class={`provider-avatar ${service.theme}`}>{service.initials}</span><span>{service.provider}</span><span class="verified-badge" aria-label="Penyedia terverifikasi">✓</span></div>
 								<div class="service-footer">
 									<div class="service-rating"><span>★</span> {service.rating} <small>({service.reviews})</small></div>
@@ -429,7 +429,7 @@
 					<p class="join-kicker">Punya keahlian? Yuk, mulai.</p>
 					<h2>Jadikan keahlianmu<br />lebih berarti.</h2>
 					<p>Temukan lebih banyak orang yang membutuhkan jasamu.</p>
-					<a class="button button-white" href="mailto:halo@serbabisa.id?subject=Info%20Serba%20Bisa">Aku mau menawarkan jasa <span>→</span></a>
+					<a class="button button-white" href="/akun">Aku mau menawarkan jasa <span>→</span></a>
 				</div>
 				<div class="join-art" aria-hidden="true">
 					<div class="join-sun"></div><div class="join-person"><span class="person-head"></span><span class="person-body"></span></div>
@@ -450,7 +450,7 @@
 				<p>Tempat bertemunya kebutuhan dan keahlian. Biar urusan jadi lebih sederhana.</p>
 			</div>
 			<div class="footer-column"><strong>Jelajahi</strong><a href="/jasa">Cari jasa</a><a href="#cara-kerja">Cara kerja</a><a href="#ulasan">Cerita pengguna</a></div>
-			<div class="footer-column"><strong>Mulai di sini</strong><a href="#bergabung">Daftar sebagai pengguna</a><a href="#bergabung">Tawarkan jasa</a><a href="#bergabung">Masuk akun</a></div>
+			<div class="footer-column"><strong>Mulai di sini</strong><a href="/akun">Daftar sebagai pengguna</a><a href="/akun">Tawarkan jasa</a><a href="/akun">Masuk akun</a></div>
 			<div class="footer-column"><strong>Bantuan</strong><a href="mailto:halo@serbabisa.id">Hubungi kami</a><a href="#kebijakan">Privasi</a><a href="#ketentuan">Ketentuan layanan</a></div>
 		</div>
 		<div class="container footer-bottom" id="ketentuan"><span>© 2026 Serba Bisa. Dibuat untuk bantu urusanmu.</span><span class="footer-social">Temukan bantuan, temukan keahlian <span>✦</span></span></div>
