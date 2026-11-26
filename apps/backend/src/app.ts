@@ -3,6 +3,7 @@ import { Elysia } from 'elysia';
 
 import type { createDatabase } from './db/client';
 import { createAuthRouter } from './auth';
+import { createOwnerServicesRouter } from './owner-services';
 import { createServicesRouter } from './services';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -19,5 +20,6 @@ export function createApp(
 			service: 'serba-bisa-api'
 		}))
 		.use(createAuthRouter(database, secureCookies))
+		.use(createOwnerServicesRouter(database))
 		.use(createServicesRouter(database));
 }

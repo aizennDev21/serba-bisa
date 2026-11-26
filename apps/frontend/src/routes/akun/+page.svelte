@@ -44,6 +44,7 @@
 							<span>{role === 'seeker' ? 'Penyewa jasa' : role === 'provider' ? 'Penyedia jasa' : role}</span>
 						{/each}
 					</div>
+					<a class="account-manage-services" href="/owner/jasa">Kelola jasa saya →</a>
 				</div>
 				<form method="POST" action="?/logout">
 					<button class="account-button account-button-secondary" type="submit">Keluar</button>
@@ -313,6 +314,14 @@
 		background: #f0f6ff;
 		font-size: 11px;
 		font-weight: 700;
+	}
+
+	.account-manage-services {
+		display: inline-flex;
+		margin-top: 12px;
+		color: #2874d8;
+		font-size: 12px;
+		font-weight: 800;
 	}
 
 	.account-alert {

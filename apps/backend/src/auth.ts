@@ -23,6 +23,26 @@ function hashToken(token: string): string {
 	return createHash('sha256').update(token).digest('hex');
 }
 
+export async function getAuthenticatedUser(database: Database, cookieHeader: string | null) {
+	const token = getSessionToken(cookieHeader);
+	if (!token) return null;
+
+	const [account] = await database
+		.select({ id: users.id, displayName: users.displayName })
+		.from(authSessions)
+		.innerJoin(users, eq(authSessions.userId, users.id))
+		.where(
+			and(
+				eq(authSessions.tokenHash, hashToken(token)),
+				gt(authSessions.expiresAt, new Date()),
+				eq(users.status, 'active')
+			)
+		)
+		.limit(1);
+
+	return account ?? null;
+}
+
 function getSessionToken(cookieHeader: string | null): string | null {
 	const entry = cookieHeader
 		?.split(';')

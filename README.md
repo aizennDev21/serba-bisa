@@ -69,6 +69,12 @@ Kata sandi di-hash memakai Argon2id melalui `Bun.password`; token sesi acak disi
 
 Fondasi ini belum mencakup verifikasi email, reset kata sandi, pembatasan percobaan login, MFA, audit perubahan role, atau pembersihan berkala sesi kedaluwarsa. Jangan gunakan alur akun untuk produksi sebelum kontrol-kontrol tersebut dan kebijakan operasional ditambahkan.
 
+## Jasa milik penyedia
+
+Setelah login, buka `/owner/jasa` untuk membuat draft, melihat listing milik akun, mengubah detail/status, atau mengarsipkan jasa. Endpoint `/api/owner/services` memerlukan sesi aktif dan kapabilitas `provider`; setiap perubahan dicocokkan dengan `owner_id` akun yang sedang login. Listing baru selalu berstatus `draft`; pemilik dapat mengaktifkannya dari dashboard, sementara status ditangguhkan hanya dapat ditetapkan sistem/admin.
+
+Verifikasi identitas owner, moderasi sebelum publikasi, upload media, dan peta belum tersedia. Dashboard meminta lokasi teks saja dan tidak menerima koordinat dari input publik.
+
 ## Pemeriksaan dan build
 
 ```sh
