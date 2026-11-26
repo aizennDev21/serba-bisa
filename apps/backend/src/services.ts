@@ -58,7 +58,7 @@ export function createServicesRouter(database?: Database) {
 				return {
 					error: {
 						code: 'DATABASE_UNAVAILABLE',
-						message: 'Service categories are temporarily unavailable because the database is not configured.'
+						message: 'Kategori jasa belum tersedia karena koneksi database belum dikonfigurasi.'
 					}
 				};
 			}
@@ -87,7 +87,7 @@ export function createServicesRouter(database?: Database) {
 					return {
 						error: {
 							code: 'DATABASE_UNAVAILABLE',
-							message: 'Service listings are temporarily unavailable because the database is not configured.'
+							message: 'Daftar jasa belum tersedia karena koneksi database belum dikonfigurasi.'
 						}
 					};
 				}
@@ -162,7 +162,7 @@ export function createServicesRouter(database?: Database) {
 					return {
 						error: {
 							code: 'DATABASE_UNAVAILABLE',
-							message: 'Service details are temporarily unavailable because the database is not configured.'
+							message: 'Detail jasa belum tersedia karena koneksi database belum dikonfigurasi.'
 						}
 					};
 				}
@@ -205,7 +205,7 @@ export function createServicesRouter(database?: Database) {
 					return {
 						error: {
 							code: 'SERVICE_NOT_FOUND',
-							message: 'Service listing was not found.'
+							message: 'Jasa yang kamu cari tidak ditemukan.'
 						}
 					};
 				}

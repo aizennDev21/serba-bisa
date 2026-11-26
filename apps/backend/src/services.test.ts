@@ -13,7 +13,7 @@ describe('public service API', () => {
 			error: {
 				code: 'DATABASE_UNAVAILABLE',
 				message:
-					'Service listings are temporarily unavailable because the database is not configured.'
+					'Daftar jasa belum tersedia karena koneksi database belum dikonfigurasi.'
 			}
 		});
 	});

@@ -15,6 +15,7 @@ cp .env.example .env
 ```
 
 Sesuaikan `DATABASE_URL` pada `.env` dengan database PostgreSQL lokal Anda.
+`BACKEND_URL` adalah alamat API Elysia yang dipakai oleh server-side load SvelteKit; untuk lokal default-nya `http://localhost:3001`.
 
 Jalankan frontend dan backend pada terminal terpisah:
 

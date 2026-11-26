@@ -143,7 +143,7 @@
 			</a>
 
 			<nav class="desktop-nav" aria-label="Navigasi utama">
-				<a class="nav-link active" href="#jasa">Cari jasa</a>
+				<a class="nav-link active" href="/jasa">Cari jasa</a>
 				<a class="nav-link" href="#cara-kerja">Cara kerja</a>
 				<a class="nav-link" href="#ulasan">Ulasan</a>
 			</nav>
@@ -158,7 +158,7 @@
 					<span></span><span></span><span></span>
 				</summary>
 				<nav aria-label="Navigasi mobile">
-					<a href="#jasa">Cari jasa</a>
+					<a href="/jasa">Cari jasa</a>
 					<a href="#cara-kerja">Cara kerja</a>
 					<a href="#ulasan">Ulasan</a>
 					<a href="#bergabung">Masuk / Daftar</a>
@@ -182,23 +182,17 @@
 						Dari urusan rumah sampai ide jadi nyata, temukan orang yang tepat untuk membantu harimu.
 					</p>
 
-					<form
-						class="search-card"
-						onsubmit={(event) => {
-							event.preventDefault();
-							document.querySelector('#jasa')?.scrollIntoView({ behavior: 'smooth' });
-						}}
-					>
+					<form class="search-card" method="GET" action="/jasa">
 						<label class="search-input-wrap">
 							<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
 								<circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8" />
 								<path d="m16 16 4.1 4.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 							</svg>
 							<span class="sr-only">Cari jasa atau kebutuhan</span>
-							<input bind:value={query} placeholder="Lagi butuh bantuan apa?" />
+							<input bind:value={query} name="q" placeholder="Lagi butuh bantuan apa?" />
 						</label>
 						<span class="search-divider"></span>
-						<div class="location-input-wrap" aria-label="Lokasi pencarian">
+						<label class="location-input-wrap">
 							<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
 								<path
 									d="M19 10.2c0 5-7 11-7 11s-7-6-7-11a7 7 0 1 1 14 0Z"
@@ -208,8 +202,8 @@
 								<circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.7" />
 							</svg>
 							<span>Lokasi</span>
-							<span class="location-current">Di mana saja</span>
-						</div>
+							<span class="location-current"><input name="location" placeholder="Di mana saja" /></span>
+						</label>
 						<button class="button button-primary search-button" type="submit">
 							<span>Cari jasa</span>
 							<svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -281,33 +275,33 @@
 						<p class="section-kicker">Mulai dari sini</p>
 						<h2 id="category-title">Butuh bantuan apa hari ini?</h2>
 					</div>
-					<a class="text-link" href="#jasa">Lihat semua jasa <span>↗</span></a>
+					<a class="text-link" href="/jasa">Lihat semua jasa <span>↗</span></a>
 				</div>
 				<div class="category-list">
-					<button class="category-tile" onclick={() => (activeCategory = 'Rumah tangga')}>
+					<a class="category-tile" href="/jasa?category=Rumah%20tangga">
 						<span class="category-icon home-icon"><svg viewBox="0 0 24 24" fill="none"><path d="m3.5 10 8.5-7 8.5 7v10.5h-6v-7h-5v7h-6V10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg></span>
 						<span>Rumah tangga</span><small>86+ jasa</small>
-					</button>
-					<button class="category-tile" onclick={() => (activeCategory = 'Desain')}>
+					</a>
+					<a class="category-tile" href="/jasa?category=Desain">
 						<span class="category-icon design-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4zM8 16l3-4 2 2 3-5 3 7" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><circle cx="9" cy="8" r="1.3" fill="currentColor" /></svg></span>
 						<span>Desain kreatif</span><small>52+ jasa</small>
-					</button>
-					<button class="category-tile" onclick={() => (activeCategory = 'Teknologi')}>
+					</a>
+					<a class="category-tile" href="/jasa?category=Teknologi">
 						<span class="category-icon tech-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7" /><path d="M8 21h8m-4-4v4m-5-9 3-3 2 2 3-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
 						<span>Teknologi</span><small>41+ jasa</small>
-					</button>
-					<button class="category-tile" onclick={() => (activeCategory = 'Kecantikan')}>
+					</a>
+					<a class="category-tile" href="/jasa?category=Kecantikan">
 						<span class="category-icon beauty-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5c2.8 3.1 5.8 5.5 5.8 9.5a5.8 5.8 0 1 1-11.6 0c0-4 3-6.4 5.8-9.5Z" stroke="currentColor" stroke-width="1.7" /><path d="M9 14.5c.4 1.3 1.4 2 2.8 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg></span>
 						<span>Kecantikan</span><small>34+ jasa</small>
-					</button>
-					<button class="category-tile" onclick={() => (activeCategory = 'Pendidikan')}>
+					</a>
+					<a class="category-tile" href="/jasa?category=Pendidikan">
 						<span class="category-icon learn-icon"><svg viewBox="0 0 24 24" fill="none"><path d="m2.8 8.5 9.2-5 9.2 5-9.2 5-9.2-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><path d="M6.5 10.5v5c3.5 2.8 7.5 2.8 11 0v-5m3.7-2v7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg></span>
 						<span>Pendidikan</span><small>28+ jasa</small>
-					</button>
-					<button class="category-tile" onclick={() => (activeCategory = 'Semua')}>
+					</a>
+					<a class="category-tile" href="/jasa">
 						<span class="category-icon more-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="5" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="5" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="19" cy="5" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="5" cy="12" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="12" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="19" cy="12" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="5" cy="19" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="19" r="1.7" stroke="currentColor" stroke-width="1.7" /><circle cx="19" cy="19" r="1.7" stroke="currentColor" stroke-width="1.7" /></svg></span>
 						<span>Lainnya</span><small>Jelajahi semua</small>
-					</button>
+					</a>
 				</div>
 			</div>
 		</section>
@@ -320,7 +314,7 @@
 						<h2 id="services-title">Jasa yang lagi banyak dicari</h2>
 						<p class="section-description">Temukan bantuan tepercaya dari orang-orang hebat di sekitarmu.</p>
 					</div>
-					<a class="text-link desktop-see-all" href="#semua-jasa">Jelajahi semua <span>↗</span></a>
+					<a class="text-link desktop-see-all" href="/jasa">Jelajahi semua <span>↗</span></a>
 				</div>
 				<div class="filter-row" aria-label="Filter kategori jasa">
 					{#each categories as category}
@@ -363,7 +357,7 @@
 				</div>
 
 				<div class="center-action" id="semua-jasa">
-					<a class="button button-outline" href="#jasa">Lihat semua jasa <span>→</span></a>
+					<a class="button button-outline" href="/jasa">Lihat semua jasa <span>→</span></a>
 					<p>Data di atas adalah contoh tampilan, bukan listing aktif.</p>
 				</div>
 			</div>
@@ -380,7 +374,7 @@
 						<div><span class="check-icon">✓</span><span><strong>Ulasan dari pengguna</strong><small>Baca rating dan komentar sebelum memilih.</small></span></div>
 						<div><span class="check-icon">✓</span><span><strong>Ngobrol langsung</strong><small>Tanyakan kebutuhanmu secara privat ke owner.</small></span></div>
 					</div>
-					<a class="button button-primary" href="#jasa">Temukan jasamu <span>→</span></a>
+					<a class="button button-primary" href="/jasa">Temukan jasamu <span>→</span></a>
 				</div>
 				<div class="trust-visual">
 					<div class="trust-blue-shape"></div>
@@ -455,7 +449,7 @@
 				</a>
 				<p>Tempat bertemunya kebutuhan dan keahlian. Biar urusan jadi lebih sederhana.</p>
 			</div>
-			<div class="footer-column"><strong>Jelajahi</strong><a href="#jasa">Cari jasa</a><a href="#cara-kerja">Cara kerja</a><a href="#ulasan">Cerita pengguna</a></div>
+			<div class="footer-column"><strong>Jelajahi</strong><a href="/jasa">Cari jasa</a><a href="#cara-kerja">Cara kerja</a><a href="#ulasan">Cerita pengguna</a></div>
 			<div class="footer-column"><strong>Mulai di sini</strong><a href="#bergabung">Daftar sebagai pengguna</a><a href="#bergabung">Tawarkan jasa</a><a href="#bergabung">Masuk akun</a></div>
 			<div class="footer-column"><strong>Bantuan</strong><a href="mailto:halo@serbabisa.id">Hubungi kami</a><a href="#kebijakan">Privasi</a><a href="#ketentuan">Ketentuan layanan</a></div>
 		</div>
