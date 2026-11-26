@@ -19,10 +19,20 @@ export type ServiceReview = {
 	comment: string;
 	createdAt: string;
 	authorName: string;
+	reply: {
+		comment: string;
+		createdAt: string;
+		authorName: string;
+	} | null;
 };
 
 export type ServiceDetail = ServiceListing & {
 	reviews: ServiceReview[];
+	viewer: {
+		isAuthenticated: boolean;
+		canReview: boolean;
+		canReply: boolean;
+	};
 };
 
 export type ServiceListResponse = {

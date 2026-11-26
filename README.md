@@ -56,6 +56,16 @@ Daftar hanya memuat jasa dengan status `active` dan owner aktif. `limit` maksimu
 
 Jika `DATABASE_URL` belum diatur, proses API tetap dapat menjalankan health check, tetapi endpoint katalog mengembalikan HTTP 503 secara eksplisit; API tidak menggunakan fallback data tiruan.
 
+## Ulasan dan balasan
+
+Pada detail jasa aktif, akun penyewa yang masuk dapat memberi satu rating dan komentar untuk setiap jasa. Owner jasa dapat mengirim satu balasan pada setiap ulasan yang dipublikasikan. Ulasan dan balasan ditampilkan sebagai fitur publik yang terpisah dari percakapan privat.
+
+- `POST /api/reviews/services/:serviceId` — membuat ulasan (rating 1–5, komentar 3–2.000 karakter).
+- `POST /api/reviews/:reviewId/reply` — owner jasa membalas ulasan (2–2.000 karakter).
+- `GET /api/services/:id` — menyertakan ulasan terbaru beserta balasan owner dan kapabilitas aksi untuk sesi yang sedang masuk.
+
+Backend memeriksa sesi, role, status jasa, dan kepemilikan. Owner tidak dapat mengulas jasanya sendiri; indeks unik di database menegakkan satu ulasan per penyewa/jasa dan satu balasan per ulasan. Saat ini ulasan belum diverifikasi melalui pesanan/transaksi, belum dapat diedit, dan moderasi ulasan belum tersedia; gunakan hanya dengan data sesuai kebijakan produk.
+
 ## Akun dan autentikasi
 
 Halaman `/akun` menyediakan formulir pendaftaran, login, dan logout. Endpoint backend:

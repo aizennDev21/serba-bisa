@@ -1,8 +1,10 @@
 import { and, asc, avg, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, t } from 'elysia';
 
+import { getAuthenticatedUser } from './auth';
 import type { createDatabase } from './db/client';
 import { reviews, services, userRoles, users } from './db/schema';
+import { getPublishedServiceReviews } from './reviews';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -156,7 +158,7 @@ export function createServicesRouter(database?: Database) {
 		)
 		.get(
 			'/:id',
-			async ({ params, set }) => {
+			async ({ params, request, set }) => {
 				if (!database) {
 					set.status = 503;
 					return {
@@ -170,6 +172,7 @@ export function createServicesRouter(database?: Database) {
 				const [service] = await database
 					.select({
 						id: services.id,
+						ownerId: services.ownerId,
 						title: services.title,
 						description: services.description,
 						category: services.category,
@@ -210,26 +213,42 @@ export function createServicesRouter(database?: Database) {
 					};
 				}
 
-				const serviceReviews = await database
-					.select({
-						id: reviews.id,
-						rating: reviews.rating,
-						comment: reviews.comment,
-						createdAt: reviews.createdAt,
-						authorName: users.displayName
-					})
-					.from(reviews)
-					.innerJoin(users, eq(reviews.authorId, users.id))
-					.where(and(eq(reviews.serviceId, params.id), eq(reviews.status, 'published')))
-					.orderBy(desc(reviews.createdAt))
-					.limit(20);
+				const [serviceReviews, viewer] = await Promise.all([
+					getPublishedServiceReviews(database, params.id),
+					getAuthenticatedUser(database, request.headers.get('cookie'))
+				]);
+				const viewerHasReview =
+					viewer &&
+					(
+						await database
+							.select({ id: reviews.id })
+							.from(reviews)
+							.where(
+								and(
+									eq(reviews.serviceId, params.id),
+									eq(reviews.authorId, viewer.id)
+								)
+							)
+							.limit(1)
+					).length > 0;
+				const { ownerId, ...publicService } = service;
 
 				return {
 					data: {
-						...service,
+						...publicService,
 						rating: Number(service.rating),
 						reviewCount: Number(service.reviewCount),
-						reviews: serviceReviews
+						reviews: serviceReviews,
+						viewer: {
+							isAuthenticated: Boolean(viewer),
+							canReview:
+								Boolean(viewer?.roles.includes('seeker')) &&
+								viewer?.id !== ownerId &&
+								!viewerHasReview,
+							canReply:
+								Boolean(viewer?.roles.includes('provider')) &&
+								viewer?.id === ownerId
+						}
 					}
 				};
 			},

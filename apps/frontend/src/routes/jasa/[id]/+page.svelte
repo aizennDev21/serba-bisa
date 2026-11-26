@@ -2,7 +2,7 @@
 	import type { PageProps } from './$types';
 	import { formatPriceUnit, formatServicePrice } from '../../../lib/services';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 </script>
 
 <svelte:head>
@@ -38,19 +38,63 @@
 						<h2>Deskripsi jasa</h2>
 						<p>{data.service.description}</p>
 					</section>
-					<section class="detail-section detail-review-section">
+					<section class="detail-section detail-review-section" id="ulasan">
 						<div class="detail-review-heading"><div><h2>Ulasan pelanggan</h2><p>Ulasan yang dipublikasikan untuk jasa ini.</p></div><strong>★ {data.service.reviewCount ? data.service.rating.toFixed(1) : '—'}</strong></div>
 						{#if data.service.reviews.length}
 							<div class="detail-review-list">
 								{#each data.service.reviews as review}
 									<article class="detail-review">
 										<div class="detail-review-avatar">{review.authorName.slice(0, 1).toUpperCase()}</div>
-										<div><div class="detail-review-meta"><strong>{review.authorName}</strong><span>★ {review.rating}</span></div><p>{review.comment}</p><small>{new Date(review.createdAt).toLocaleDateString('id-ID')}</small></div>
+										<div class="detail-review-content">
+											<div class="detail-review-meta"><strong>{review.authorName}</strong><span>★ {review.rating}</span></div>
+											<p>{review.comment}</p>
+											<small>{new Date(review.createdAt).toLocaleDateString('id-ID')}</small>
+											{#if review.reply}
+												<div class="detail-review-reply">
+													<strong>Balasan dari {review.reply.authorName}</strong>
+													<p>{review.reply.comment}</p>
+													<small>{new Date(review.reply.createdAt).toLocaleDateString('id-ID')}</small>
+												</div>
+											{:else if data.service.viewer.canReply}
+												<form class="detail-review-reply-form" method="POST" action="?/reply">
+													<input type="hidden" name="reviewId" value={review.id} />
+													<label for={`reply-${review.id}`}>Balas ulasan</label>
+													<textarea id={`reply-${review.id}`} name="comment" minlength="2" maxlength="2000" required placeholder="Tulis balasan yang membantu..." aria-describedby={`reply-error-${review.id}`}></textarea>
+													{#if form?.replyId === review.id && form.replyError}<p class="detail-review-error" id={`reply-error-${review.id}`} role="alert">{form.replyError}</p>{/if}
+													<button type="submit">Kirim balasan</button>
+												</form>
+											{/if}
+										</div>
 									</article>
 								{/each}
 							</div>
 						{:else}
 							<p class="detail-no-reviews">Belum ada ulasan untuk jasa ini.</p>
+						{/if}
+						{#if data.service.viewer.canReview}
+							<form class="detail-review-form" method="POST" action="?/review">
+								<h3>Bagikan pengalamanmu</h3>
+								<label for="review-rating">Rating</label>
+								<select id="review-rating" name="rating" required>
+									<option value="">Pilih rating</option>
+									<option value="5">★★★★★ — Sangat puas</option>
+									<option value="4">★★★★ — Puas</option>
+									<option value="3">★★★ — Cukup</option>
+									<option value="2">★★ — Kurang puas</option>
+									<option value="1">★ — Tidak puas</option>
+								</select>
+								<label for="review-comment">Komentar</label>
+								<textarea id="review-comment" name="comment" minlength="3" maxlength="2000" required placeholder="Ceritakan pengalamanmu menggunakan jasa ini..."></textarea>
+								{#if form?.reviewError}<p class="detail-review-error" role="alert">{form.reviewError}</p>{/if}
+								<button type="submit">Kirim ulasan</button>
+								<small>Satu ulasan dapat diberikan untuk setiap jasa.</small>
+							</form>
+						{:else if !data.service.viewer.isAuthenticated}
+							<p class="detail-review-hint"><a href="/akun">Masuk atau daftar</a> untuk memberikan ulasan dan rating.</p>
+						{:else if data.service.viewer.canReply}
+							<p class="detail-review-hint">Sebagai penyedia, kamu dapat membalas ulasan pelanggan di atas.</p>
+						{:else}
+							<p class="detail-review-hint">Kamu sudah mengirim ulasan untuk jasa ini.</p>
 						{/if}
 					</section>
 				</div>

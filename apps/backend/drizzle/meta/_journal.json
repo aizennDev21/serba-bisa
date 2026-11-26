@@ -36,6 +36,13 @@
       "when": 1795693284167,
       "tag": "0004_nice_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795695404585,
+      "tag": "0005_sloppy_magneto",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { createAuthRouter } from './auth';
 import { createAdminServicesRouter } from './admin-services';
 import { createAdminUsersRouter } from './admin-users';
 import { createOwnerServicesRouter } from './owner-services';
+import { createReviewsRouter } from './reviews';
 import { createServicesRouter } from './services';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -25,5 +26,6 @@ export function createApp(
 		.use(createAdminServicesRouter(database))
 		.use(createAdminUsersRouter(database))
 		.use(createOwnerServicesRouter(database))
+		.use(createReviewsRouter(database))
 		.use(createServicesRouter(database));
 }

@@ -2618,6 +2618,11 @@ p {
 	gap: 10px;
 }
 
+.detail-review-content {
+	min-width: 0;
+	flex: 1;
+}
+
 .detail-review-avatar {
 	width: 30px;
 	height: 30px;
@@ -2647,6 +2652,107 @@ p {
 .detail-review small {
 	color: #9aa7b5;
 	font-size: 8px;
+}
+
+.detail-review-form,
+.detail-review-reply-form {
+	display: grid;
+	gap: 9px;
+	padding: 15px;
+	margin-top: 20px;
+	border: 1px solid #e4ebf4;
+	border-radius: 12px;
+	background: #fbfdff;
+}
+
+.detail-review-form h3 {
+	margin: 0 0 2px;
+	color: #38536f;
+	font: 600 12px 'Poppins', sans-serif;
+}
+
+.detail-review-form label,
+.detail-review-reply-form label {
+	color: #526984;
+	font-size: 9px;
+	font-weight: 700;
+}
+
+.detail-review-form select,
+.detail-review-form textarea,
+.detail-review-reply-form textarea {
+	width: 100%;
+	min-height: 38px;
+	padding: 9px 10px;
+	border: 1px solid #dfe7f1;
+	border-radius: 8px;
+	color: #38536f;
+	background: #fff;
+	font: 400 10px 'DM Sans', sans-serif;
+}
+
+.detail-review-form textarea,
+.detail-review-reply-form textarea {
+	min-height: 86px;
+	resize: vertical;
+}
+
+.detail-review-form button,
+.detail-review-reply-form button {
+	min-height: 36px;
+	padding: 0 13px;
+	border: 0;
+	border-radius: 8px;
+	color: #fff;
+	background: #2874d8;
+	font: 700 10px 'DM Sans', sans-serif;
+	cursor: pointer;
+}
+
+.detail-review-form > small {
+	color: #91a0b0;
+	font-size: 8px;
+}
+
+.detail-review-reply {
+	padding: 10px 12px;
+	margin-top: 12px;
+	border-left: 2px solid #7eabe3;
+	border-radius: 0 8px 8px 0;
+	background: #f5f9ff;
+}
+
+.detail-review-reply > strong {
+	color: #385f8d;
+	font-size: 9px;
+}
+
+.detail-review-reply p {
+	margin: 5px 0;
+}
+
+.detail-review-reply-form {
+	padding: 12px;
+	margin-top: 12px;
+}
+
+.detail-review-reply-form textarea {
+	min-height: 64px;
+}
+
+.detail-review-hint {
+	margin-top: 14px !important;
+}
+
+.detail-review-hint a {
+	color: #2874d8;
+	font-weight: 700;
+}
+
+.detail-review-error {
+	margin: 0 !important;
+	color: #a8463a !important;
+	font-size: 9px !important;
 }
 
 .detail-no-reviews {

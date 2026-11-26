@@ -3,6 +3,7 @@ import {
 	pgEnum,
 	pgTable,
 	index,
+	uniqueIndex,
 	primaryKey,
 	integer,
 	numeric,
@@ -179,6 +180,26 @@ export const reviews = pgTable(
 			table.status,
 			table.createdAt
 		),
+		uniqueIndex('reviews_service_author_unique_idx').on(table.serviceId, table.authorId),
 		check('reviews_rating_range_check', sql`${table.rating} between 1 and 5`)
+	]
+);
+
+export const reviewReplies = pgTable(
+	'review_replies',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		reviewId: uuid('review_id')
+			.notNull()
+			.references(() => reviews.id, { onDelete: 'cascade' }),
+		authorId: uuid('author_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		comment: text('comment').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		uniqueIndex('review_replies_review_id_unique_idx').on(table.reviewId),
+		index('review_replies_author_created_at_idx').on(table.authorId, table.createdAt)
 	]
 );
