@@ -86,6 +86,7 @@ export const services = pgTable(
 		price: integer('price').notNull(),
 		priceUnit: servicePriceUnit('price_unit').notNull(),
 		status: serviceStatus('status').notNull().default('draft'),
+		statusBeforeSuspension: serviceStatus('status_before_suspension'),
 		location: text('location').notNull(),
 		latitude: numeric('latitude', { precision: 9, scale: 6 }),
 		longitude: numeric('longitude', { precision: 9, scale: 6 }),
@@ -109,6 +110,28 @@ export const services = pgTable(
 			sql`${table.longitude} is null or ${table.longitude} between -180 and 180`
 		),
 		check('services_price_nonnegative_check', sql`${table.price} >= 0`)
+	]
+);
+
+export const moderationAuditLogs = pgTable(
+	'moderation_audit_logs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		serviceId: uuid('service_id')
+			.notNull()
+			.references(() => services.id, { onDelete: 'restrict' }),
+		actorId: uuid('actor_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		action: text('action').notNull(),
+		reason: text('reason').notNull(),
+		previousStatus: serviceStatus('previous_status'),
+		newStatus: serviceStatus('new_status').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('moderation_audit_logs_service_created_at_idx').on(table.serviceId, table.createdAt),
+		index('moderation_audit_logs_actor_created_at_idx').on(table.actorId, table.createdAt)
 	]
 );
 

@@ -40,7 +40,14 @@ export async function getAuthenticatedUser(database: Database, cookieHeader: str
 		)
 		.limit(1);
 
-	return account ?? null;
+	if (!account) return null;
+
+	const roles = await database
+		.select({ role: userRoles.role })
+		.from(userRoles)
+		.where(eq(userRoles.userId, account.id));
+
+	return { ...account, roles: roles.map(({ role }) => role) };
 }
 
 function getSessionToken(cookieHeader: string | null): string | null {

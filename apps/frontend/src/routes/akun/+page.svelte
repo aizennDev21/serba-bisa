@@ -45,6 +45,9 @@
 						{/each}
 					</div>
 					<a class="account-manage-services" href="/owner/jasa">Kelola jasa saya →</a>
+					{#if data.user.roles.includes('admin') || data.user.roles.includes('super_admin')}
+						<a class="account-manage-services" href="/admin/jasa">Moderasi jasa →</a>
+					{/if}
 				</div>
 				<form method="POST" action="?/logout">
 					<button class="account-button account-button-secondary" type="submit">Keluar</button>

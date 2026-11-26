@@ -75,6 +75,20 @@ Setelah login, buka `/owner/jasa` untuk membuat draft, melihat listing milik aku
 
 Verifikasi identitas owner, moderasi sebelum publikasi, upload media, dan peta belum tersedia. Dashboard meminta lokasi teks saja dan tidak menerima koordinat dari input publik.
 
+## Moderasi admin
+
+Admin dan super admin dapat meninjau draft, menyetujui publikasi, menangguhkan listing, atau memulihkan listing dari `/admin/jasa`. Endpoint `/api/admin/services` memverifikasi role dari sesi di server. Alasan wajib dicatat bersama identitas moderator, status lama/baru, dan waktu dalam `moderation_audit_logs`.
+
+Role admin tidak dapat didaftarkan dari UI publik. Untuk setup lokal, buat akun melalui `/akun`, lalu berikan role melalui koneksi PostgreSQL tepercaya, dengan mengganti email pada query berikut:
+
+```sql
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'admin' FROM users WHERE lower(email) = lower('admin-lokal@example.test')
+ON CONFLICT DO NOTHING;
+```
+
+Jalankan hanya dari database development yang dapat dipercaya; jangan menyebarkan kredensial database. Pada produksi, pemberian role harus melalui proses operasional yang diaudit. Pengelolaan user oleh admin/super admin belum tersedia.
+
 ## Pemeriksaan dan build
 
 ```sh
