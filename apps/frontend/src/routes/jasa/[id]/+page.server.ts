@@ -9,7 +9,12 @@ const apiBaseUrl = BACKEND_URL.replace(/\/+$/, '');
 type ServiceResponse = { data: ServiceDetail };
 type ApiErrorResponse = { error?: { message?: string } };
 type AvailabilityResponse = {
-	data: { date: string; timezone: string; slots: { startAt: string; label: string }[] };
+	data: {
+		date: string;
+		timezone: string;
+		schedule: 'weekly' | 'exception';
+		slots: { startAt: string; label: string }[];
+	};
 };
 
 function getJakartaDate(date: Date): string {
@@ -81,6 +86,10 @@ export const load: PageServerLoad = async ({ fetch, params, request, url }) => {
 				availabilityResponse.ok && 'data' in availabilityBody
 					? availabilityBody.data.slots
 					: [],
+			availabilitySchedule:
+				availabilityResponse.ok && 'data' in availabilityBody
+					? availabilityBody.data.schedule
+					: null,
 			availabilityError
 		};
 	} catch (cause) {
@@ -91,6 +100,7 @@ export const load: PageServerLoad = async ({ fetch, params, request, url }) => {
 			service: null,
 			availabilityDate: getJakartaDate(new Date()),
 			availabilitySlots: [],
+			availabilitySchedule: null,
 			availabilityError: null,
 			apiError: 'Tidak dapat terhubung ke server katalog. Pastikan backend sedang berjalan.'
 		};

@@ -6,6 +6,7 @@ import {
 	uniqueIndex,
 	boolean,
 	primaryKey,
+	date,
 	integer,
 	numeric,
 	text,
@@ -359,6 +360,40 @@ export const ownerWeeklyAvailability = pgTable(
 		),
 		check(
 			'owner_weekly_availability_interval_check',
+			sql`not ${table.isAvailable} or ${table.endMinute} > ${table.startMinute}`
+		)
+	]
+);
+
+export const ownerAvailabilityExceptions = pgTable(
+	'owner_availability_exceptions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		serviceDate: date('service_date').notNull(),
+		isAvailable: boolean('is_available').notNull(),
+		startMinute: integer('start_minute').notNull().default(480),
+		endMinute: integer('end_minute').notNull().default(1020),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		uniqueIndex('owner_availability_exceptions_owner_date_unique_idx').on(
+			table.ownerId,
+			table.serviceDate
+		),
+		index('owner_availability_exceptions_date_idx').on(table.serviceDate),
+		check(
+			'owner_availability_exceptions_start_minute_check',
+			sql`${table.startMinute} between 0 and 1380 and ${table.startMinute} % 60 = 0`
+		),
+		check(
+			'owner_availability_exceptions_end_minute_check',
+			sql`${table.endMinute} between 60 and 1440 and ${table.endMinute} % 60 = 0`
+		),
+		check(
+			'owner_availability_exceptions_interval_check',
 			sql`not ${table.isAvailable} or ${table.endMinute} > ${table.startMinute}`
 		)
 	]

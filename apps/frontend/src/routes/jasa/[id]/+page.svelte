@@ -150,7 +150,7 @@
 								{:else if data.availabilitySlots.length === 0}
 									<p class="detail-slot-hint" id="booking-slot-hint">Tidak ada slot tersedia pada tanggal ini. Kamu tetap dapat mengajukan permintaan tanpa jadwal.</p>
 								{:else}
-									<p class="detail-slot-hint" id="booking-slot-hint">{data.availabilitySlots.length} slot tersedia untuk {data.availabilityDate}.</p>
+									<p class="detail-slot-hint" id="booking-slot-hint">{data.availabilitySlots.length} slot tersedia untuk {data.availabilityDate}.{data.availabilitySchedule === 'exception' ? ' Jadwal khusus berlaku untuk tanggal ini.' : ''}</p>
 								{/if}
 								<label for="booking-location">Lokasi layanan <span>(opsional)</span></label>
 								<input id="booking-location" name="requestedLocation" maxlength="200" placeholder={data.service.location} />

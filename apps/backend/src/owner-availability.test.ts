@@ -45,4 +45,46 @@ describe('owner availability API without a database', () => {
 		);
 		expect(response.status).toBe(422);
 	});
+
+	test('validates exception dates and reports unavailable storage', async () => {
+		const invalidDate = await app.handle(
+			new Request('http://localhost/api/owner/availability/exceptions/not-a-date', {
+				method: 'DELETE'
+			})
+		);
+		const read = await app.handle(
+			new Request('http://localhost/api/owner/availability/exceptions')
+		);
+		const write = await app.handle(
+			new Request('http://localhost/api/owner/availability/exceptions', {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					date: '2030-01-03',
+					isAvailable: false,
+					startMinute: 480,
+					endMinute: 1020
+				})
+			})
+		);
+		expect(invalidDate.status).toBe(422);
+		expect(read.status).toBe(503);
+		expect(write.status).toBe(503);
+	});
+
+	test('validates exception time bounds before database access', async () => {
+		const response = await app.handle(
+			new Request('http://localhost/api/owner/availability/exceptions', {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					date: '2030-01-03',
+					isAvailable: true,
+					startMinute: 1500,
+					endMinute: 1020
+				})
+			})
+		);
+		expect(response.status).toBe(422);
+	});
 });

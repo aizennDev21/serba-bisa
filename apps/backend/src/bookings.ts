@@ -8,6 +8,7 @@ import {
 	bookingStatusAuditLogs,
 	bookings,
 	notifications,
+	ownerAvailabilityExceptions,
 	ownerWeeklyAvailability,
 	services,
 	userRoles,
@@ -53,6 +54,10 @@ function getJakartaSlot(date: Date): { dayOfWeek: number; startMinute: number; e
 	return { dayOfWeek, startMinute, endMinute: startMinute + 60 };
 }
 
+function getJakartaDate(date: Date): string {
+	return jakartaDateFormatter.format(date);
+}
+
 function isAcceptedSlotConflict(error: unknown): boolean {
 	if (typeof error !== 'object' || error === null) return false;
 	if (
@@ -87,20 +92,37 @@ async function updateBookingStatus(
 			if (!slot || booking.requestedAt.getTime() <= Date.now()) {
 				return { error: 'invalid-slot' as const };
 			}
-			const [availability] = await tx
+			const [exception] = await tx
 				.select({
-					isAvailable: ownerWeeklyAvailability.isAvailable,
-					startMinute: ownerWeeklyAvailability.startMinute,
-					endMinute: ownerWeeklyAvailability.endMinute
+					isAvailable: ownerAvailabilityExceptions.isAvailable,
+					startMinute: ownerAvailabilityExceptions.startMinute,
+					endMinute: ownerAvailabilityExceptions.endMinute
 				})
-				.from(ownerWeeklyAvailability)
+				.from(ownerAvailabilityExceptions)
 				.where(
 					and(
-						eq(ownerWeeklyAvailability.ownerId, booking.ownerId),
-						eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+						eq(ownerAvailabilityExceptions.ownerId, booking.ownerId),
+						eq(ownerAvailabilityExceptions.serviceDate, getJakartaDate(booking.requestedAt))
 					)
 				)
 				.limit(1);
+			const [weeklyAvailability] = exception
+				? []
+				: await tx
+						.select({
+							isAvailable: ownerWeeklyAvailability.isAvailable,
+							startMinute: ownerWeeklyAvailability.startMinute,
+							endMinute: ownerWeeklyAvailability.endMinute
+						})
+						.from(ownerWeeklyAvailability)
+						.where(
+							and(
+								eq(ownerWeeklyAvailability.ownerId, booking.ownerId),
+								eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+							)
+						)
+						.limit(1);
+			const availability = exception ?? weeklyAvailability;
 			if (
 				!availability?.isAvailable ||
 				slot.startMinute < availability.startMinute ||
@@ -231,20 +253,37 @@ export function createBookingsRouter(database?: Database) {
 					return { error: { code: 'SERVICE_NOT_FOUND', message: 'Jasa yang dipilih tidak tersedia.' } };
 				}
 
-				const [availability] = await database
+				const [exception] = await database
 					.select({
-						isAvailable: ownerWeeklyAvailability.isAvailable,
-						startMinute: ownerWeeklyAvailability.startMinute,
-						endMinute: ownerWeeklyAvailability.endMinute
+						isAvailable: ownerAvailabilityExceptions.isAvailable,
+						startMinute: ownerAvailabilityExceptions.startMinute,
+						endMinute: ownerAvailabilityExceptions.endMinute
 					})
-					.from(ownerWeeklyAvailability)
+					.from(ownerAvailabilityExceptions)
 					.where(
 						and(
-							eq(ownerWeeklyAvailability.ownerId, service.ownerId),
-							eq(ownerWeeklyAvailability.dayOfWeek, slotDay.dayOfWeek)
+							eq(ownerAvailabilityExceptions.ownerId, service.ownerId),
+							eq(ownerAvailabilityExceptions.serviceDate, query.date)
 						)
 					)
 					.limit(1);
+				const [weeklyAvailability] = exception
+					? []
+					: await database
+							.select({
+								isAvailable: ownerWeeklyAvailability.isAvailable,
+								startMinute: ownerWeeklyAvailability.startMinute,
+								endMinute: ownerWeeklyAvailability.endMinute
+							})
+							.from(ownerWeeklyAvailability)
+							.where(
+								and(
+									eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+									eq(ownerWeeklyAvailability.dayOfWeek, slotDay.dayOfWeek)
+								)
+							)
+							.limit(1);
+				const availability = exception ?? weeklyAvailability;
 				const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 				const occupiedRows = await database
 					.select({ requestedAt: bookings.requestedAt })
@@ -297,6 +336,7 @@ export function createBookingsRouter(database?: Database) {
 					data: {
 						date: query.date,
 						timezone: 'Asia/Jakarta',
+						schedule: exception ? 'exception' : 'weekly',
 						slots
 					}
 				};
@@ -423,20 +463,40 @@ export function createBookingsRouter(database?: Database) {
 							}
 						};
 					}
-					const [availability] = await database
+					const [exception] = await database
 						.select({
-							isAvailable: ownerWeeklyAvailability.isAvailable,
-							startMinute: ownerWeeklyAvailability.startMinute,
-							endMinute: ownerWeeklyAvailability.endMinute
+							isAvailable: ownerAvailabilityExceptions.isAvailable,
+							startMinute: ownerAvailabilityExceptions.startMinute,
+							endMinute: ownerAvailabilityExceptions.endMinute
 						})
-						.from(ownerWeeklyAvailability)
+						.from(ownerAvailabilityExceptions)
 						.where(
 							and(
-								eq(ownerWeeklyAvailability.ownerId, service.ownerId),
-								eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+								eq(ownerAvailabilityExceptions.ownerId, service.ownerId),
+								eq(
+									ownerAvailabilityExceptions.serviceDate,
+									getJakartaDate(requestedAt)
+								)
 							)
 						)
 						.limit(1);
+					const [weeklyAvailability] = exception
+						? []
+						: await database
+								.select({
+									isAvailable: ownerWeeklyAvailability.isAvailable,
+									startMinute: ownerWeeklyAvailability.startMinute,
+									endMinute: ownerWeeklyAvailability.endMinute
+								})
+								.from(ownerWeeklyAvailability)
+								.where(
+									and(
+										eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+										eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+									)
+								)
+								.limit(1);
+					const availability = exception ?? weeklyAvailability;
 					if (
 						!availability?.isAvailable ||
 						slot.startMinute < availability.startMinute ||
@@ -477,20 +537,40 @@ export function createBookingsRouter(database?: Database) {
 					if (requestedAt) {
 						const slot = getJakartaSlot(requestedAt);
 						if (!slot) return { error: 'invalid-slot' as const };
-						const [availability] = await tx
+						const [exception] = await tx
 							.select({
-								isAvailable: ownerWeeklyAvailability.isAvailable,
-								startMinute: ownerWeeklyAvailability.startMinute,
-								endMinute: ownerWeeklyAvailability.endMinute
+								isAvailable: ownerAvailabilityExceptions.isAvailable,
+								startMinute: ownerAvailabilityExceptions.startMinute,
+								endMinute: ownerAvailabilityExceptions.endMinute
 							})
-							.from(ownerWeeklyAvailability)
+							.from(ownerAvailabilityExceptions)
 							.where(
 								and(
-									eq(ownerWeeklyAvailability.ownerId, service.ownerId),
-									eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+									eq(ownerAvailabilityExceptions.ownerId, service.ownerId),
+									eq(
+										ownerAvailabilityExceptions.serviceDate,
+										getJakartaDate(requestedAt)
+									)
 								)
 							)
 							.limit(1);
+						const [weeklyAvailability] = exception
+							? []
+							: await tx
+									.select({
+										isAvailable: ownerWeeklyAvailability.isAvailable,
+										startMinute: ownerWeeklyAvailability.startMinute,
+										endMinute: ownerWeeklyAvailability.endMinute
+									})
+									.from(ownerWeeklyAvailability)
+									.where(
+										and(
+											eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+											eq(ownerWeeklyAvailability.dayOfWeek, slot.dayOfWeek)
+										)
+									)
+									.limit(1);
+						const availability = exception ?? weeklyAvailability;
 						if (
 							!availability?.isAvailable ||
 							slot.startMinute < availability.startMinute ||

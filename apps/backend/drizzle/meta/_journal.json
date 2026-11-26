@@ -71,6 +71,13 @@
       "when": 1795699869234,
       "tag": "0009_fantastic_the_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795700835500,
+      "tag": "0010_majestic_spiral",
+      "breakpoints": true
     }
   ]
 }
