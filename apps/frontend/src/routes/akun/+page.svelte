@@ -47,6 +47,7 @@
 					<a class="account-manage-services" href="/owner/jasa">Kelola jasa saya →</a>
 					{#if data.user.roles.includes('admin') || data.user.roles.includes('super_admin')}
 						<a class="account-manage-services" href="/admin/jasa">Moderasi jasa →</a>
+						<a class="account-manage-services" href="/admin/users">Manajemen pengguna →</a>
 					{/if}
 				</div>
 				<form method="POST" action="?/logout">

@@ -135,6 +135,29 @@ export const moderationAuditLogs = pgTable(
 	]
 );
 
+export const userAdminAuditLogs = pgTable(
+	'user_admin_audit_logs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		targetUserId: uuid('target_user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		actorId: uuid('actor_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		action: text('action').notNull(),
+		reason: text('reason').notNull(),
+		previousStatus: userStatus('previous_status'),
+		newStatus: userStatus('new_status'),
+		role: userRole('role'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('user_admin_audit_logs_target_created_at_idx').on(table.targetUserId, table.createdAt),
+		index('user_admin_audit_logs_actor_created_at_idx').on(table.actorId, table.createdAt)
+	]
+);
+
 export const reviews = pgTable(
 	'reviews',
 	{

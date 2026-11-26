@@ -4,6 +4,7 @@ import { Elysia } from 'elysia';
 import type { createDatabase } from './db/client';
 import { createAuthRouter } from './auth';
 import { createAdminServicesRouter } from './admin-services';
+import { createAdminUsersRouter } from './admin-users';
 import { createOwnerServicesRouter } from './owner-services';
 import { createServicesRouter } from './services';
 
@@ -22,6 +23,7 @@ export function createApp(
 		}))
 		.use(createAuthRouter(database, secureCookies))
 		.use(createAdminServicesRouter(database))
+		.use(createAdminUsersRouter(database))
 		.use(createOwnerServicesRouter(database))
 		.use(createServicesRouter(database));
 }

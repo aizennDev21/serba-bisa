@@ -87,7 +87,21 @@ SELECT id, 'admin' FROM users WHERE lower(email) = lower('admin-lokal@example.te
 ON CONFLICT DO NOTHING;
 ```
 
-Jalankan hanya dari database development yang dapat dipercaya; jangan menyebarkan kredensial database. Pada produksi, pemberian role harus melalui proses operasional yang diaudit. Pengelolaan user oleh admin/super admin belum tersedia.
+Jalankan hanya dari database development yang dapat dipercaya; jangan menyebarkan kredensial database. Pada produksi, pemberian role harus melalui proses operasional yang diaudit.
+
+## Manajemen pengguna admin
+
+Admin dan super admin dapat mencari akun, menonaktifkan, atau memulihkan akun dari `/admin/users`. Penonaktifan mencabut semua sesi aktif. Admin hanya melihat dan mengelola pengguna biasa; akun super admin tidak disertakan dalam daftar admin dan perubahan langsung terhadapnya ditolak server. Super admin dapat mengelola semua akun dan memberikan/mencabut role `admin`, namun role `super_admin` tidak dapat diubah dari dashboard.
+
+Setiap tindakan memerlukan alasan 8–500 karakter dan dicatat di `user_admin_audit_logs`. Riwayat ditampilkan pada halaman untuk super admin. Sebagai bootstrap development awal, role super admin juga hanya boleh diberikan melalui koneksi PostgreSQL lokal yang dipercaya:
+
+```sql
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'super_admin' FROM users WHERE lower(email) = lower('super-lokal@example.test')
+ON CONFLICT DO NOTHING;
+```
+
+Jangan gunakan query bootstrap ini di produksi tanpa proses change-control, autentikasi ulang, dan audit operasional yang disetujui.
 
 ## Pemeriksaan dan build
 

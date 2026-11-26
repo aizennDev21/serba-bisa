@@ -29,6 +29,13 @@
       "when": 1795692563968,
       "tag": "0003_minor_hedge_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795693284167,
+      "tag": "0004_nice_queen_noir",
+      "breakpoints": true
     }
   ]
 }
