@@ -72,11 +72,12 @@ Penyewa dapat mengajukan permintaan dari detail jasa aktif dengan rincian kebutu
 
 - `POST /api/bookings` — membuat permintaan untuk jasa aktif; harga dan nama jasa disimpan sebagai snapshot.
 - `GET /api/bookings` — menampilkan maksimal 100 pesanan milik penyewa atau owner yang sedang masuk.
+- `GET /api/bookings/availability?serviceId=:id&date=YYYY-MM-DD` — menampilkan slot satu jam yang tersedia pada tanggal WIB tersebut, setelah mengecualikan waktu lampau dan jadwal yang sudah diterima.
 - `PATCH /api/bookings/:bookingId/status` — mengubah status sesuai role, kepemilikan, dan transisi yang diizinkan.
 - `/pesanan` — dashboard untuk melihat dan mengelola permintaan pesanan.
 - `/owner/ketersediaan` — pengaturan jadwal mingguan owner.
 
-Pesanan yang meminta jadwal di luar rentang mingguan ditolak. Owner hanya dapat menerima satu pesanan terjadwal per slot waktu, termasuk lintas jasa; indeks unik database juga melindungi dari permintaan accept serentak. Perubahan ketersediaan yang akan bertentangan dengan pesanan accepted masa depan ditolak. Permintaan tanpa waktu tetap didukung dan tidak menahan slot.
+Pada detail jasa, penyewa dapat memilih tanggal untuk melihat slot yang masih tersedia. Pesanan yang meminta jadwal di luar rentang mingguan ditolak. Owner hanya dapat menerima satu pesanan terjadwal per slot waktu, termasuk lintas jasa; indeks unik database juga melindungi dari permintaan accept serentak. Perubahan ketersediaan yang akan bertentangan dengan pesanan accepted masa depan ditolak. Permintaan tanpa waktu tetap didukung dan tidak menahan slot. Daftar slot bersifat informatif; server memvalidasi kembali saat pesanan dibuat dan diterima.
 
 Alur ini tidak memproses pembayaran atau menetapkan tagihan. Harga snapshot adalah informasi dari listing; pembayaran online, refund, komisi, dan penyelesaian sengketa belum tersedia. Chat tetap terpisah dan tidak membutuhkan pesanan.
 

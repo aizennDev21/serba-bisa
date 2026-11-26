@@ -261,6 +261,7 @@ Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status
 - **FR-63:** Owner hanya dapat menerima maksimal satu pesanan terjadwal pada slot yang sama, termasuk pesanan pada listing berbeda; batas ini juga dijaga database untuk menghadapi permintaan bersamaan.
 - **FR-64:** Perubahan jadwal mingguan ditolak bila menghapus ketersediaan bagi pesanan masa depan yang sudah diterima.
 - **FR-65:** Permintaan tanpa waktu tertentu tetap dapat diajukan dan ditinjau owner tanpa reservasi slot.
+- **FR-66:** Sebelum mengajukan jadwal, penyewa dapat memilih tanggal dan melihat slot satu jam yang belum diterima untuk owner; server tetap memvalidasi ulang saat permintaan diajukan.
 
 ## 6. Kebutuhan Non-Fungsional
 
@@ -399,6 +400,7 @@ Relasi, batas retensi, penghapusan/anonimisasi, indeks, serta aturan jumlah bala
 12. Halaman utama diuji di viewport mobile dan desktop, dapat digunakan dengan keyboard, dan metrik performa awal dicatat terhadap target NFR.
 13. Pemohon pesanan dan pihak terkait menerima notifikasi persisten saat permintaan/status berubah; akses notifikasi dibatasi pada penerima.
 14. Owner dapat mengatur jadwal mingguan; pesanan terjadwal hanya dapat dibuat dan diterima pada waktu tersedia dan slot accepted tidak dapat bentrok.
+15. Daftar slot pada jasa tidak menampilkan waktu lampau atau slot yang sudah memiliki pesanan accepted; perubahan serentak tetap diputuskan oleh validasi server/database.
 
 ## 10. Metrik Keberhasilan
 

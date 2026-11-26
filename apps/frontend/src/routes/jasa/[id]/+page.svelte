@@ -119,13 +119,39 @@
 							<p>Pesanan terjadwal menggunakan slot satu jam.</p>
 						</div>
 						{#if data.service.viewer.canStartChat}
+							<form class="detail-slot-date" method="GET">
+								<label for="booking-date">Pilih tanggal kunjungan <span>(opsional, WIB)</span></label>
+								<div>
+									<input
+										id="booking-date"
+										name="tanggal"
+										type="date"
+										value={data.availabilityDate}
+										min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())}
+										required
+									/>
+									<button type="submit">Lihat slot</button>
+								</div>
+							</form>
 							<form class="detail-booking-form" method="POST" action="?/booking">
 								<h3>Ajukan pesanan</h3>
 								<p>Permintaan akan dikirim ke penyedia untuk ditinjau. Pembayaran belum tersedia di platform.</p>
 								<label for="booking-message">Ceritakan kebutuhanmu</label>
 								<textarea id="booking-message" name="requestMessage" minlength="20" maxlength="2000" required placeholder="Jelaskan pekerjaan dan kebutuhan yang perlu diketahui penyedia..." aria-describedby="booking-message-error"></textarea>
-								<label for="booking-time">Jadwal yang diinginkan <span>(opsional, pilih menit 00 WIB)</span></label>
-								<input id="booking-time" name="requestedAt" type="datetime-local" step="3600" />
+								<label for="booking-time">Slot tersedia <span>(opsional, WIB)</span></label>
+								<select id="booking-time" name="requestedAt" aria-describedby="booking-slot-hint">
+									<option value="">Belum menentukan jadwal</option>
+									{#each data.availabilitySlots as slot (slot.startAt)}
+										<option value={slot.startAt}>{slot.label}</option>
+									{/each}
+								</select>
+								{#if data.availabilityError}
+									<p class="detail-review-error" id="booking-slot-hint" role="status">{data.availabilityError}</p>
+								{:else if data.availabilitySlots.length === 0}
+									<p class="detail-slot-hint" id="booking-slot-hint">Tidak ada slot tersedia pada tanggal ini. Kamu tetap dapat mengajukan permintaan tanpa jadwal.</p>
+								{:else}
+									<p class="detail-slot-hint" id="booking-slot-hint">{data.availabilitySlots.length} slot tersedia untuk {data.availabilityDate}.</p>
+								{/if}
 								<label for="booking-location">Lokasi layanan <span>(opsional)</span></label>
 								<input id="booking-location" name="requestedLocation" maxlength="200" placeholder={data.service.location} />
 								{#if form?.bookingError}<p class="detail-review-error" id="booking-message-error" role="alert">{form.bookingError}</p>{/if}
@@ -159,5 +185,6 @@
 
 <style>
 	.detail-availability{display:grid;gap:6px;padding:12px;margin:14px 0;border-radius:10px;background:#f7f9fc}.detail-availability>strong{margin-bottom:2px;color:#526984;font-size:10px}.detail-availability>strong small{color:#8797a9;font-weight:500}.detail-availability>div{display:flex;justify-content:space-between;gap:8px;color:#71839a;font-size:9px}.detail-availability>div span:last-child{font-weight:700;color:#405873}.detail-availability>p{margin:4px 0 0;color:#8797a9;font-size:9px}
+	.detail-slot-date{display:grid;gap:7px;padding:12px;margin:15px 0 8px;border:1px solid #dce8f7;border-radius:10px;background:#f8fbff}.detail-slot-date>label{color:#526984;font-size:10px;font-weight:700}.detail-slot-date>label span{color:#8797a9;font-weight:400}.detail-slot-date>div{display:flex;gap:7px}.detail-slot-date input,.detail-booking-form select{min-width:0;width:100%;padding:10px;border:1px solid #dfe7f0;border-radius:8px;background:#fff;color:#405873;font:inherit;font-size:11px}.detail-slot-date button{flex:0 0 auto;padding:9px 11px;border:0;border-radius:8px;background:#eaf3ff;color:#2874d8;font-size:10px;font-weight:700;cursor:pointer}.detail-slot-hint{margin:0;color:#78889b;font-size:9px;line-height:1.5}
 	.detail-booking-form{display:grid;gap:8px;padding:15px;margin:17px 0;border:1px solid #dce8f7;border-radius:12px;background:#f8fbff}.detail-booking-form h3{margin:0;color:#152b49;font:600 14px Poppins,sans-serif}.detail-booking-form>p{margin:0 0 4px;color:#78889b;font-size:10px;line-height:1.55}.detail-booking-form label{margin-top:4px;color:#526984;font-size:10px;font-weight:700}.detail-booking-form label span{font-weight:400;color:#8797a9}.detail-booking-form input,.detail-booking-form textarea{width:100%;padding:10px;border:1px solid #dfe7f0;border-radius:8px;background:#fff;color:#152b49;font:inherit;font-size:11px}.detail-booking-form textarea{min-height:84px;resize:vertical}.detail-booking-form button{padding:11px;border:0;border-radius:8px;background:#2874d8;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
 </style>

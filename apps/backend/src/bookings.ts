@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { Elysia, t } from 'elysia';
 
@@ -23,6 +23,12 @@ const jakartaTimeFormatter = new Intl.DateTimeFormat('en-US', {
 	hour: '2-digit',
 	minute: '2-digit',
 	hourCycle: 'h23'
+});
+const jakartaDateFormatter = new Intl.DateTimeFormat('en-CA', {
+	timeZone: 'Asia/Jakarta',
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit'
 });
 const weekdayNumbers: Record<string, number> = {
 	Sun: 0,
@@ -169,9 +175,134 @@ const changeStatusBody = t.Object({
 	]),
 	reason: t.Optional(t.String({ minLength: 8, maxLength: 500, pattern: '\\S' }))
 });
+const availabilityQuery = t.Object({
+	serviceId: t.String({ format: 'uuid' }),
+	date: t.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' })
+});
 
 export function createBookingsRouter(database?: Database) {
 	return new Elysia({ prefix: '/api/bookings' })
+		.get(
+			'/availability',
+			async ({ query, set }) => {
+				if (!database) {
+					set.status = 503;
+					return {
+						error: {
+							code: 'DATABASE_UNAVAILABLE',
+							message: 'Jadwal pesanan belum tersedia karena koneksi database belum dikonfigurasi.'
+						}
+					};
+				}
+				const dayStart = new Date(`${query.date}T00:00:00+07:00`);
+				if (
+					!Number.isFinite(dayStart.getTime()) ||
+					jakartaDateFormatter.format(dayStart) !== query.date
+				) {
+					set.status = 422;
+					return {
+						error: { code: 'INVALID_AVAILABILITY_DATE', message: 'Tanggal jadwal tidak valid.' }
+					};
+				}
+				const slotDay = getJakartaSlot(dayStart);
+				if (!slotDay) {
+					set.status = 422;
+					return {
+						error: { code: 'INVALID_AVAILABILITY_DATE', message: 'Tanggal jadwal tidak valid.' }
+					};
+				}
+
+				const [service] = await database
+					.select({ id: services.id, ownerId: services.ownerId })
+					.from(services)
+					.innerJoin(users, eq(users.id, services.ownerId))
+					.innerJoin(userRoles, eq(userRoles.userId, users.id))
+					.where(
+						and(
+							eq(services.id, query.serviceId),
+							eq(services.status, 'active'),
+							eq(users.status, 'active'),
+							eq(userRoles.role, 'provider')
+						)
+					)
+					.limit(1);
+				if (!service) {
+					set.status = 404;
+					return { error: { code: 'SERVICE_NOT_FOUND', message: 'Jasa yang dipilih tidak tersedia.' } };
+				}
+
+				const [availability] = await database
+					.select({
+						isAvailable: ownerWeeklyAvailability.isAvailable,
+						startMinute: ownerWeeklyAvailability.startMinute,
+						endMinute: ownerWeeklyAvailability.endMinute
+					})
+					.from(ownerWeeklyAvailability)
+					.where(
+						and(
+							eq(ownerWeeklyAvailability.ownerId, service.ownerId),
+							eq(ownerWeeklyAvailability.dayOfWeek, slotDay.dayOfWeek)
+						)
+					)
+					.limit(1);
+				const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+				const occupiedRows = await database
+					.select({ requestedAt: bookings.requestedAt })
+					.from(bookings)
+					.where(
+						and(
+							eq(bookings.ownerId, service.ownerId),
+							eq(bookings.status, 'accepted'),
+							gte(bookings.requestedAt, dayStart),
+							lt(bookings.requestedAt, dayEnd)
+						)
+					);
+				const occupied = new Set(
+					occupiedRows.flatMap(({ requestedAt }) =>
+						requestedAt ? [requestedAt.toISOString()] : []
+					)
+				);
+				const currentTime = Date.now();
+				const slots =
+					availability?.isAvailable
+						? Array.from(
+								{
+									length:
+										(availability.endMinute - availability.startMinute) / 60
+								},
+								(_, index) => {
+									const startMinute = availability.startMinute + index * 60;
+									const startAt = new Date(
+										dayStart.getTime() + startMinute * 60_000
+									);
+									return {
+										startAt,
+										startMinute,
+										endMinute: startMinute + 60
+									};
+								}
+							)
+								.filter(
+									(slot) =>
+										slot.startAt.getTime() > currentTime &&
+										!occupied.has(slot.startAt.toISOString())
+								)
+								.map((slot) => ({
+									startAt: slot.startAt.toISOString(),
+									label: `${String(Math.floor(slot.startMinute / 60)).padStart(2, '0')}:00–${String(Math.floor(slot.endMinute / 60)).padStart(2, '0')}:00 WIB`
+								}))
+						: [];
+
+				return {
+					data: {
+						date: query.date,
+						timezone: 'Asia/Jakarta',
+						slots
+					}
+				};
+			},
+			{ query: availabilityQuery }
+		)
 		.get('/', async ({ request, set }) => {
 			if (!database) {
 				set.status = 503;

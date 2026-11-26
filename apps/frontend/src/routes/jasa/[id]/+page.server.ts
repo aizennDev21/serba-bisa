@@ -8,6 +8,23 @@ const apiBaseUrl = BACKEND_URL.replace(/\/+$/, '');
 
 type ServiceResponse = { data: ServiceDetail };
 type ApiErrorResponse = { error?: { message?: string } };
+type AvailabilityResponse = {
+	data: { date: string; timezone: string; slots: { startAt: string; label: string }[] };
+};
+
+function getJakartaDate(date: Date): string {
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat('en-CA', {
+			timeZone: 'Asia/Jakarta',
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit'
+		})
+			.formatToParts(date)
+			.map(({ type, value }) => [type, value])
+	);
+	return `${parts.year}-${parts.month}-${parts.day}`;
+}
 
 function cookieHeaders(cookie: string | null): Record<string, string> {
 	return cookie ? { cookie } : {};
@@ -17,7 +34,7 @@ function getErrorMessage(body: ApiErrorResponse, status: number): string {
 	return body.error?.message ?? `Permintaan gagal (HTTP ${status}).`;
 }
 
-export const load: PageServerLoad = async ({ fetch, params, request }) => {
+export const load: PageServerLoad = async ({ fetch, params, request, url }) => {
 	try {
 		const response = await fetch(`${apiBaseUrl}/api/services/${encodeURIComponent(params.id)}`, {
 			headers: cookieHeaders(request.headers.get('cookie'))
@@ -38,13 +55,43 @@ export const load: PageServerLoad = async ({ fetch, params, request }) => {
 		}
 
 		const result = (await response.json()) as ServiceResponse;
-		return { service: result.data, apiError: null };
+		const requestedDate = url.searchParams.get('tanggal');
+		const availabilityDate =
+			requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+				? requestedDate
+				: getJakartaDate(new Date());
+		const availabilityResponse = await fetch(
+			`${apiBaseUrl}/api/bookings/availability?${new URLSearchParams({
+				serviceId: params.id,
+				date: availabilityDate
+			})}`
+		);
+		const availabilityBody = (await availabilityResponse.json()) as
+			| AvailabilityResponse
+			| ApiErrorResponse;
+		const availabilityError = availabilityResponse.ok
+			? null
+			: ('error' in availabilityBody ? availabilityBody.error?.message : undefined) ??
+				'Slot jadwal belum dapat dimuat.';
+		return {
+			service: result.data,
+			apiError: null,
+			availabilityDate,
+			availabilitySlots:
+				availabilityResponse.ok && 'data' in availabilityBody
+					? availabilityBody.data.slots
+					: [],
+			availabilityError
+		};
 	} catch (cause) {
 		if (cause instanceof Response) throw cause;
 		if (!(cause instanceof TypeError)) throw cause;
 
 		return {
 			service: null,
+			availabilityDate: getJakartaDate(new Date()),
+			availabilitySlots: [],
+			availabilityError: null,
 			apiError: 'Tidak dapat terhubung ke server katalog. Pastikan backend sedang berjalan.'
 		};
 	}
@@ -149,10 +196,15 @@ async function postBookingAction(
 	if (requestedLocation.length > 200) {
 		return fail(422, { bookingError: 'Lokasi maksimal 200 karakter.' });
 	}
-	if (requestedAtInput && !/^\d{4}-\d{2}-\d{2}T\d{2}:00$/.test(requestedAtInput)) {
-		return fail(422, { bookingError: 'Pilih jam penuh dalam zona waktu WIB.' });
+	if (
+		requestedAtInput &&
+		!/^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:\.000)?(?:Z|\+00:00|\+07:00)$/.test(
+			requestedAtInput
+		)
+	) {
+		return fail(422, { bookingError: 'Pilih salah satu slot tersedia dalam zona waktu WIB.' });
 	}
-	const requestedAt = requestedAtInput ? new Date(`${requestedAtInput}:00+07:00`) : null;
+	const requestedAt = requestedAtInput ? new Date(requestedAtInput) : null;
 	if (
 		requestedAt &&
 		(!Number.isFinite(requestedAt.getTime()) || requestedAt.getTime() <= Date.now())
