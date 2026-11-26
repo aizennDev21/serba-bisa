@@ -1,14 +1,34 @@
 import {
+	check,
 	pgEnum,
 	pgTable,
+	index,
 	primaryKey,
+	integer,
+	numeric,
 	text,
 	timestamp,
 	uuid
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const userStatus = pgEnum('user_status', ['active', 'suspended']);
 export const userRole = pgEnum('user_role', ['seeker', 'provider', 'admin', 'super_admin']);
+export const serviceStatus = pgEnum('service_status', [
+	'draft',
+	'active',
+	'unavailable',
+	'suspended',
+	'archived'
+]);
+export const servicePriceUnit = pgEnum('service_price_unit', [
+	'hour',
+	'visit',
+	'project',
+	'session',
+	'fixed'
+]);
+export const reviewStatus = pgEnum('review_status', ['published', 'hidden', 'removed']);
 
 export const users = pgTable('users', {
 	id: uuid('id').defaultRandom().primaryKey(),
@@ -29,4 +49,68 @@ export const userRoles = pgTable(
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.role] })]
+);
+
+export const services = pgTable(
+	'services',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		title: text('title').notNull(),
+		description: text('description').notNull(),
+		category: text('category').notNull(),
+		price: integer('price').notNull(),
+		priceUnit: servicePriceUnit('price_unit').notNull(),
+		status: serviceStatus('status').notNull().default('draft'),
+		location: text('location').notNull(),
+		latitude: numeric('latitude', { precision: 9, scale: 6 }),
+		longitude: numeric('longitude', { precision: 9, scale: 6 }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('services_status_created_at_idx').on(table.status, table.createdAt),
+		index('services_category_idx').on(table.category),
+		index('services_owner_id_idx').on(table.ownerId),
+		check(
+			'services_coordinates_pair_check',
+			sql`(${table.latitude} is null) = (${table.longitude} is null)`
+		),
+		check(
+			'services_latitude_range_check',
+			sql`${table.latitude} is null or ${table.latitude} between -90 and 90`
+		),
+		check(
+			'services_longitude_range_check',
+			sql`${table.longitude} is null or ${table.longitude} between -180 and 180`
+		),
+		check('services_price_nonnegative_check', sql`${table.price} >= 0`)
+	]
+);
+
+export const reviews = pgTable(
+	'reviews',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		serviceId: uuid('service_id')
+			.notNull()
+			.references(() => services.id, { onDelete: 'cascade' }),
+		authorId: uuid('author_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		rating: integer('rating').notNull(),
+		comment: text('comment').notNull(),
+		status: reviewStatus('status').notNull().default('published'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('reviews_service_status_created_at_idx').on(
+			table.serviceId,
+			table.status,
+			table.createdAt
+		),
+		check('reviews_rating_range_check', sql`${table.rating} between 1 and 5`)
+	]
 );

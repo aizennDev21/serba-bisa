@@ -10,6 +10,7 @@
 		"dev:frontend": "bun run --filter frontend dev",
 		"dev:backend": "bun run --filter @serba-bisa/backend dev",
 		"check": "bun run --filter frontend check && bun run --filter @serba-bisa/backend check",
+		"test": "bun run --filter @serba-bisa/backend test",
 		"build": "bun run --bun --filter frontend build && bun run --filter @serba-bisa/backend build",
 		"db:generate": "bun run --filter @serba-bisa/backend db:generate",
 		"db:migrate": "bun run --filter @serba-bisa/backend db:migrate"

@@ -25,6 +25,18 @@ bun run dev:backend
 
 Frontend tersedia pada alamat yang dicetak Vite (default `http://localhost:5173`); pemeriksaan backend tersedia di `http://localhost:3001/api/health`.
 
+## API katalog jasa
+
+Dengan PostgreSQL sudah disiapkan dan migrasi diterapkan, backend menyediakan endpoint publik:
+
+- `GET /api/services?q=bersih&category=Rumah%20tangga&location=Jakarta&page=1&limit=12`
+- `GET /api/services/categories`
+- `GET /api/services/:id`
+
+Daftar hanya memuat jasa dengan status `active` dan owner aktif. `limit` maksimum 50; daftar memberikan metadata paginasi, rating agregat, dan jumlah ulasan yang dipublikasikan. Detail mengembalikan maksimal 20 ulasan terbaru yang dipublikasikan. Listing yang tidak tersedia, ditangguhkan, diarsipkan, atau tidak dikenal menghasilkan 404 dari endpoint detail. Koordinat tersimpan di database, tetapi belum dibuka ke API publik sampai kebijakan presisi lokasi diputuskan.
+
+Jika `DATABASE_URL` belum diatur, proses API tetap dapat menjalankan health check, tetapi endpoint katalog mengembalikan HTTP 503 secara eksplisit; API tidak menggunakan fallback data tiruan.
+
 ## Pemeriksaan dan build
 
 ```sh
