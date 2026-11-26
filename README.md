@@ -14,8 +14,26 @@ bun install
 cp .env.example .env
 ```
 
-Sesuaikan `DATABASE_URL` pada `.env` dengan database PostgreSQL lokal Anda.
-`BACKEND_URL` adalah alamat API Elysia yang dipakai oleh server-side load SvelteKit; untuk lokal default-nya `http://localhost:3001`.
+`.env.example` menggunakan database development lokal dengan user/password khusus development. Jangan gunakan nilai tersebut di staging/produksi. `BACKEND_URL` adalah alamat API Elysia yang dipakai oleh server-side load SvelteKit; untuk lokal default-nya `http://localhost:3001`.
+Skrip root untuk menjalankan frontend/backend, migrasi, dan seed memuat `.env` secara eksplisit; pastikan file tersebut dibuat sebelum menjalankan perintah-perintah itu.
+
+Jalankan database dan terapkan migrasi:
+
+```sh
+bun run db:up
+bun run db:status
+bun run db:migrate
+```
+
+Port PostgreSQL lokal default adalah `5433`, agar tidak berbenturan dengan service PostgreSQL lain pada port standar. Konfigurasi dapat diubah lewat `.env`.
+
+Untuk mengisi listing pratinjau secara eksplisit, ubah `SEED_DEMO_DATA=true` pada `.env`, lalu jalankan:
+
+```sh
+bun run db:seed
+```
+
+Seed berisi akun, listing, dan ulasan fiktif yang diberi label `DEMO`; script tidak berjalan tanpa opt-in tersebut. Setelah seed selesai, kembalikan `SEED_DEMO_DATA=false` jika tidak ingin menjalankan seed lagi.
 
 Jalankan frontend dan backend pada terminal terpisah:
 
@@ -54,3 +72,5 @@ Schema awal dan konfigurasi Drizzle berada di `apps/backend/src/db` dan `apps/ba
 bun run db:generate
 bun run db:migrate
 ```
+
+`bun run db:stop` menghentikan container database tanpa menghapus volume. Data development tetap tersimpan pada volume Docker bernama; jangan menghapus volume jika masih dibutuhkan.
