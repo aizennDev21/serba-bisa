@@ -3,7 +3,7 @@ import { Elysia, t } from 'elysia';
 
 import { getAuthenticatedUser } from './auth';
 import type { createDatabase } from './db/client';
-import { reviewReplies, reviews, services, userRoles, users } from './db/schema';
+import { bookings, reviewReplies, reviews, services, userRoles, users } from './db/schema';
 
 type Database = ReturnType<typeof createDatabase>['db'];
 
@@ -69,6 +69,26 @@ export function createReviewsRouter(database?: Database) {
 				if (service.ownerId === actor.id) {
 					set.status = 403;
 					return { error: { code: 'OWNER_CANNOT_REVIEW', message: 'Penyedia tidak dapat mengulas jasanya sendiri.' } };
+				}
+				const [completedBooking] = await database
+					.select({ id: bookings.id })
+					.from(bookings)
+					.where(
+						and(
+							eq(bookings.serviceId, service.id),
+							eq(bookings.seekerId, actor.id),
+							eq(bookings.status, 'completed')
+						)
+					)
+					.limit(1);
+				if (!completedBooking) {
+					set.status = 403;
+					return {
+						error: {
+							code: 'COMPLETED_BOOKING_REQUIRED',
+							message: 'Ulasan hanya dapat diberikan setelah pesanan jasa selesai.'
+						}
+					};
 				}
 
 				const [review] = await database

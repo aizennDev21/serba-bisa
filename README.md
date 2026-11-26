@@ -58,13 +58,24 @@ Jika `DATABASE_URL` belum diatur, proses API tetap dapat menjalankan health chec
 
 ## Ulasan dan balasan
 
-Pada detail jasa aktif, akun penyewa yang masuk dapat memberi satu rating dan komentar untuk setiap jasa. Owner jasa dapat mengirim satu balasan pada setiap ulasan yang dipublikasikan. Ulasan dan balasan ditampilkan sebagai fitur publik yang terpisah dari percakapan privat.
+Pada detail jasa aktif, akun penyewa yang masuk dapat memberi satu rating dan komentar untuk setiap jasa setelah pesanan jasa terkait berstatus selesai. Owner jasa dapat mengirim satu balasan pada setiap ulasan yang dipublikasikan. Ulasan dan balasan ditampilkan sebagai fitur publik yang terpisah dari percakapan privat.
 
 - `POST /api/reviews/services/:serviceId` — membuat ulasan (rating 1–5, komentar 3–2.000 karakter).
 - `POST /api/reviews/:reviewId/reply` — owner jasa membalas ulasan (2–2.000 karakter).
 - `GET /api/services/:id` — menyertakan ulasan terbaru beserta balasan owner dan kapabilitas aksi untuk sesi yang sedang masuk.
 
-Backend memeriksa sesi, role, status jasa, dan kepemilikan. Owner tidak dapat mengulas jasanya sendiri; indeks unik di database menegakkan satu ulasan per penyewa/jasa dan satu balasan per ulasan. Saat ini ulasan belum diverifikasi melalui pesanan/transaksi, belum dapat diedit, dan moderasi ulasan belum tersedia; gunakan hanya dengan data sesuai kebijakan produk.
+Backend memeriksa sesi, role, status jasa, pesanan selesai, dan kepemilikan. Owner tidak dapat mengulas jasanya sendiri; indeks unik di database menegakkan satu ulasan per penyewa/jasa dan satu balasan per ulasan. Ulasan belum dapat diedit dan moderasi ulasan belum tersedia.
+
+## Pemesanan jasa
+
+Penyewa dapat mengajukan permintaan dari detail jasa aktif dengan rincian kebutuhan serta jadwal dan lokasi opsional. Owner dapat menerima atau menolak permintaan, lalu menandai pekerjaan yang diterima sebagai selesai. Penyewa dapat membatalkan permintaan yang belum diterima; kedua pihak dapat membatalkan pesanan yang telah diterima dengan alasan. Perubahan status disimpan bersama audit pelaku, waktu, dan alasan.
+
+- `POST /api/bookings` — membuat permintaan untuk jasa aktif; harga dan nama jasa disimpan sebagai snapshot.
+- `GET /api/bookings` — menampilkan maksimal 100 pesanan milik penyewa atau owner yang sedang masuk.
+- `PATCH /api/bookings/:bookingId/status` — mengubah status sesuai role, kepemilikan, dan transisi yang diizinkan.
+- `/pesanan` — dashboard untuk melihat dan mengelola permintaan pesanan.
+
+Alur ini tidak memproses pembayaran atau menetapkan tagihan. Harga snapshot adalah informasi dari listing; pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa belum tersedia. Chat tetap terpisah dan tidak membutuhkan pesanan.
 
 ## Chat privat
 
@@ -76,7 +87,7 @@ Penyewa yang sudah masuk dapat memulai satu percakapan privat per jasa aktif dar
 - `POST /api/chat/:conversationId/messages` — mengirim pesan teks (maksimal 4.000 karakter).
 - `GET /api/chat/:conversationId/events` — stream SSE untuk notifikasi `new_message`, hanya bagi peserta dan origin frontend yang dikonfigurasi.
 
-Percakapan hanya antara penyewa dan owner yang terikat dengan jasa; data ulasan tidak pernah dipakai sebagai pesan. Notifikasi SSE hanya mengirim sinyal tanpa isi pesan sehingga klien mengambil isi melalui API yang memeriksa sesi dan akses peserta. Broker/pub-sub eksternal untuk menjalankan beberapa backend, status baca, lampiran, blokir/laporan pengguna, retensi/penghapusan pesan, rate limiting, dan persyaratan transaksi sebelum menghubungi owner belum tersedia. Untuk produksi multi-instance, tambahkan pub/sub bersama serta kebijakan retensi dan mitigasi spam.
+Percakapan hanya antara penyewa dan owner yang terikat dengan jasa; data ulasan tidak pernah dipakai sebagai pesan. Notifikasi SSE hanya mengirim sinyal tanpa isi pesan sehingga klien mengambil isi melalui API yang memeriksa sesi dan akses peserta. Broker/pub/sub eksternal untuk menjalankan beberapa backend, status baca, lampiran, blokir/laporan pengguna, retensi/penghapusan pesan, dan rate limiting belum tersedia. Untuk produksi multi-instance, tambahkan pub/sub bersama serta kebijakan retensi dan mitigasi spam.
 
 ## Akun dan autentikasi
 

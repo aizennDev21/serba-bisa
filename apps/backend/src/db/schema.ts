@@ -30,6 +30,13 @@ export const servicePriceUnit = pgEnum('service_price_unit', [
 	'fixed'
 ]);
 export const reviewStatus = pgEnum('review_status', ['published', 'hidden', 'removed']);
+export const bookingStatus = pgEnum('booking_status', [
+	'requested',
+	'accepted',
+	'declined',
+	'cancelled',
+	'completed'
+]);
 
 export const users = pgTable('users', {
 	id: uuid('id').defaultRandom().primaryKey(),
@@ -244,4 +251,54 @@ export const chatMessages = pgTable(
 		index('chat_messages_conversation_created_at_idx').on(table.conversationId, table.createdAt),
 		index('chat_messages_sender_created_at_idx').on(table.senderId, table.createdAt)
 	]
+);
+
+export const bookings = pgTable(
+	'bookings',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		serviceId: uuid('service_id')
+			.notNull()
+			.references(() => services.id, { onDelete: 'restrict' }),
+		seekerId: uuid('seeker_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		ownerId: uuid('owner_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		serviceTitle: text('service_title').notNull(),
+		price: integer('price').notNull(),
+		priceUnit: servicePriceUnit('price_unit').notNull(),
+		requestMessage: text('request_message').notNull(),
+		requestedAt: timestamp('requested_at', { withTimezone: true }),
+		requestedLocation: text('requested_location'),
+		status: bookingStatus('status').notNull().default('requested'),
+		statusReason: text('status_reason'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		index('bookings_seeker_created_at_idx').on(table.seekerId, table.createdAt),
+		index('bookings_owner_created_at_idx').on(table.ownerId, table.createdAt),
+		index('bookings_service_status_idx').on(table.serviceId, table.status),
+		check('bookings_price_nonnegative_check', sql`${table.price} >= 0`)
+	]
+);
+
+export const bookingStatusAuditLogs = pgTable(
+	'booking_status_audit_logs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		bookingId: uuid('booking_id')
+			.notNull()
+			.references(() => bookings.id, { onDelete: 'cascade' }),
+		actorId: uuid('actor_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		previousStatus: bookingStatus('previous_status').notNull(),
+		newStatus: bookingStatus('new_status').notNull(),
+		reason: text('reason'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [index('booking_status_audit_logs_booking_created_at_idx').on(table.bookingId, table.createdAt)]
 );

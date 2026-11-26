@@ -14,7 +14,7 @@ function cookieHeaders(cookie: string | null): Record<string, string> {
 }
 
 function getErrorMessage(body: ApiErrorResponse, status: number): string {
-	return body.error?.message ?? `Permintaan ulasan gagal (HTTP ${status}).`;
+	return body.error?.message ?? `Permintaan gagal (HTTP ${status}).`;
 }
 
 export const load: PageServerLoad = async ({ fetch, params, request }) => {
@@ -134,9 +134,56 @@ async function postReplyAction(
 	throw redirect(303, `/jasa/${encodeURIComponent(serviceId)}?reply=sent#ulasan`);
 }
 
+async function postBookingAction(
+	fetch: typeof globalThis.fetch,
+	request: Request,
+	serviceId: string
+) {
+	const form = await request.formData();
+	const requestMessage = String(form.get('requestMessage') ?? '').trim();
+	const requestedLocation = String(form.get('requestedLocation') ?? '').trim();
+	const requestedAtInput = String(form.get('requestedAt') ?? '').trim();
+	if (requestMessage.length < 20 || requestMessage.length > 2000) {
+		return fail(422, { bookingError: 'Detail permintaan harus terdiri dari 20–2.000 karakter.' });
+	}
+	if (requestedLocation.length > 200) {
+		return fail(422, { bookingError: 'Lokasi maksimal 200 karakter.' });
+	}
+	const requestedAt = requestedAtInput ? new Date(requestedAtInput) : null;
+	if (requestedAt && (!Number.isFinite(requestedAt.getTime()) || requestedAt.getTime() <= Date.now())) {
+		return fail(422, { bookingError: 'Pilih jadwal yang berada di masa depan.' });
+	}
+
+	try {
+		const response = await fetch(`${apiBaseUrl}/api/bookings`, {
+			method: 'POST',
+			headers: {
+				...cookieHeaders(request.headers.get('cookie')),
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({
+				serviceId,
+				requestMessage,
+				requestedLocation: requestedLocation || undefined,
+				requestedAt: requestedAt?.toISOString()
+			})
+		});
+		if (!response.ok) {
+			const body = (await response.json()) as ApiErrorResponse;
+			return fail(response.status, { bookingError: getErrorMessage(body, response.status) });
+		}
+	} catch (cause) {
+		if (!(cause instanceof TypeError)) throw cause;
+		return fail(503, { bookingError: 'Tidak dapat menghubungi layanan pemesanan. Silakan coba lagi.' });
+	}
+
+	throw redirect(303, '/pesanan?booking=created');
+}
+
 export const actions: Actions = {
 	review: ({ fetch, request, params }) => postReviewAction(fetch, request, params.id),
 	reply: ({ fetch, request, params }) => postReplyAction(fetch, request, params.id),
+	booking: ({ fetch, request, params }) => postBookingAction(fetch, request, params.id),
 	chat: async ({ fetch, request, params }) => {
 		try {
 			const response = await fetch(

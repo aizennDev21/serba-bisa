@@ -87,14 +87,14 @@
 								<textarea id="review-comment" name="comment" minlength="3" maxlength="2000" required placeholder="Ceritakan pengalamanmu menggunakan jasa ini..."></textarea>
 								{#if form?.reviewError}<p class="detail-review-error" role="alert">{form.reviewError}</p>{/if}
 								<button type="submit">Kirim ulasan</button>
-								<small>Satu ulasan dapat diberikan untuk setiap jasa.</small>
+								<small>Ulasan tersedia setelah pesanan selesai. Satu ulasan dapat diberikan untuk setiap jasa.</small>
 							</form>
 						{:else if !data.service.viewer.isAuthenticated}
 							<p class="detail-review-hint"><a href="/akun">Masuk atau daftar</a> untuk memberikan ulasan dan rating.</p>
 						{:else if data.service.viewer.canReply}
 							<p class="detail-review-hint">Sebagai penyedia, kamu dapat membalas ulasan pelanggan di atas.</p>
 						{:else}
-							<p class="detail-review-hint">Kamu sudah mengirim ulasan untuk jasa ini.</p>
+							<p class="detail-review-hint">Ulasan tersedia setelah pesanan selesai dan hanya satu ulasan dapat diberikan untuk setiap jasa.</p>
 						{/if}
 					</section>
 				</div>
@@ -106,6 +106,20 @@
 						<p class="detail-sidebar-label">Harga jasa</p>
 						<div class="detail-price">{formatServicePrice(data.service.price)}<small>{formatPriceUnit(data.service.priceUnit)}</small></div>
 						<p class="detail-price-note">Harga ditampilkan sesuai informasi dari penyedia jasa.</p>
+						{#if data.service.viewer.canStartChat}
+							<form class="detail-booking-form" method="POST" action="?/booking">
+								<h3>Ajukan pesanan</h3>
+								<p>Permintaan akan dikirim ke penyedia untuk ditinjau. Pembayaran belum tersedia di platform.</p>
+								<label for="booking-message">Ceritakan kebutuhanmu</label>
+								<textarea id="booking-message" name="requestMessage" minlength="20" maxlength="2000" required placeholder="Jelaskan pekerjaan dan kebutuhan yang perlu diketahui penyedia..." aria-describedby="booking-message-error"></textarea>
+								<label for="booking-time">Jadwal yang diinginkan <span>(opsional)</span></label>
+								<input id="booking-time" name="requestedAt" type="datetime-local" />
+								<label for="booking-location">Lokasi layanan <span>(opsional)</span></label>
+								<input id="booking-location" name="requestedLocation" maxlength="200" placeholder={data.service.location} />
+								{#if form?.bookingError}<p class="detail-review-error" id="booking-message-error" role="alert">{form.bookingError}</p>{/if}
+								<button type="submit">Kirim permintaan pesanan</button>
+							</form>
+						{/if}
 						{#if data.service.viewer.canStartChat}
 							<form method="POST" action="?/chat">
 								<button class="detail-contact-button" type="submit">Chat dengan penyedia <span>→</span></button>
@@ -130,3 +144,7 @@
 
 	<footer class="catalog-footer"><div class="catalog-container"><a href="/">serbabisa<span>.</span></a><span>Temukan bantuan, temukan keahlian.</span><a href="/jasa">Kembali ke katalog ↑</a></div></footer>
 </div>
+
+<style>
+	.detail-booking-form{display:grid;gap:8px;padding:15px;margin:17px 0;border:1px solid #dce8f7;border-radius:12px;background:#f8fbff}.detail-booking-form h3{margin:0;color:#152b49;font:600 14px Poppins,sans-serif}.detail-booking-form>p{margin:0 0 4px;color:#78889b;font-size:10px;line-height:1.55}.detail-booking-form label{margin-top:4px;color:#526984;font-size:10px;font-weight:700}.detail-booking-form label span{font-weight:400;color:#8797a9}.detail-booking-form input,.detail-booking-form textarea{width:100%;padding:10px;border:1px solid #dfe7f0;border-radius:8px;background:#fff;color:#152b49;font:inherit;font-size:11px}.detail-booking-form textarea{min-height:84px;resize:vertical}.detail-booking-form button{padding:11px;border:0;border-radius:8px;background:#2874d8;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
+</style>

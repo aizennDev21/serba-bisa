@@ -3,7 +3,7 @@ import { Elysia, t } from 'elysia';
 
 import { getAuthenticatedUser } from './auth';
 import type { createDatabase } from './db/client';
-import { reviews, services, userRoles, users } from './db/schema';
+import { bookings, reviews, services, userRoles, users } from './db/schema';
 import { getPublishedServiceReviews } from './reviews';
 
 type Database = ReturnType<typeof createDatabase>['db'];
@@ -231,6 +231,21 @@ export function createServicesRouter(database?: Database) {
 							)
 							.limit(1)
 					).length > 0;
+				const viewerHasCompletedBooking =
+					viewer &&
+					(
+						await database
+							.select({ id: bookings.id })
+							.from(bookings)
+							.where(
+								and(
+									eq(bookings.serviceId, params.id),
+									eq(bookings.seekerId, viewer.id),
+									eq(bookings.status, 'completed')
+								)
+							)
+							.limit(1)
+					).length > 0;
 				const { ownerId, ...publicService } = service;
 
 				return {
@@ -244,6 +259,7 @@ export function createServicesRouter(database?: Database) {
 							canReview:
 								Boolean(viewer?.roles.includes('seeker')) &&
 								viewer?.id !== ownerId &&
+								Boolean(viewerHasCompletedBooking) &&
 								!viewerHasReview,
 							canReply:
 								Boolean(viewer?.roles.includes('provider')) &&

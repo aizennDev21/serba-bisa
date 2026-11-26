@@ -5,6 +5,7 @@ import type { createDatabase } from './db/client';
 import { createAuthRouter } from './auth';
 import { createAdminServicesRouter } from './admin-services';
 import { createAdminUsersRouter } from './admin-users';
+import { createBookingsRouter } from './bookings';
 import { createChatRouter } from './chat';
 import { createOwnerServicesRouter } from './owner-services';
 import { createReviewsRouter } from './reviews';
@@ -26,6 +27,7 @@ export function createApp(
 		.use(createAuthRouter(database, secureCookies))
 		.use(createAdminServicesRouter(database))
 		.use(createAdminUsersRouter(database))
+		.use(createBookingsRouter(database))
 		.use(createChatRouter(database, frontendOrigin))
 		.use(createOwnerServicesRouter(database))
 		.use(createReviewsRouter(database))

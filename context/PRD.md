@@ -118,11 +118,11 @@ Role dengan kewenangan tertinggi untuk mengelola operasional platform.
 Prioritas berikut adalah rekomendasi untuk validasi dan pengembangan bertahap, bukan komitmen scope MVP.
 
 - **P0 setelah MVP:** pelaporan pengguna/listing/ulasan, verifikasi nomor telepon atau email, notifikasi pesan baru, status pesan terkirim/dibaca, dan dashboard metrik dasar.
-- **P1:** pemesanan/booking dengan jadwal, kalender ketersediaan, notifikasi email/push, favorit, berbagi listing, serta foto/portofolio jasa.
+- **P1:** kalender ketersediaan, notifikasi email/push, favorit, berbagi listing, serta foto/portofolio jasa.
 - **P2:** pembayaran online, kebijakan pembatalan/refund, komisi platform, invoice, paket promosi, kupon, dan program loyalitas.
 - **P3:** aplikasi PWA yang lebih lengkap, rekomendasi personal, dukungan multi-bahasa, verifikasi penyedia, dan sistem sengketa.
 
-Sebelum implementasi fitur transaksi, pemilik produk perlu memutuskan alur booking, tanggung jawab platform, biaya/komisi, pembatalan, refund, serta kebutuhan kepatuhan yang berlaku.
+Fondasi booking pada tahap implementasi ini hanya mencatat permintaan dan status pekerjaan. Pembayaran, refund, komisi, penanganan sengketa, dan kewajiban kepatuhan transaksi tetap memerlukan keputusan produk tersendiri.
 
 ## 4. Alur Pengguna Utama
 
@@ -216,7 +216,7 @@ Sebelum implementasi fitur transaksi, pemilik produk perlu memutuskan alur booki
 - **FR-33:** Pengguna yang berizin dapat membalas komentar sebagai thread yang terlihat publik.
 - **FR-34:** Balasan komentar bukan chat; tidak memiliki ekspektasi privasi atau realtime yang sama dengan pesan langsung.
 - **FR-35:** Pengguna dapat melaporkan ulasan/balasan yang dianggap melanggar aturan. Pengguna tidak dapat mengubah ulasan milik orang lain.
-- **FR-36:** Aturan apakah pengguna harus menyelesaikan transaksi sebelum memberi ulasan belum ditentukan. Rekomendasi awal: tandai ulasan sebagai belum terverifikasi sampai alur booking/transaksi tersedia.
+- **FR-36:** Ulasan hanya dapat dibuat oleh penyewa setelah pesanan untuk jasa terkait berstatus selesai; satu ulasan tetap berlaku per penyewa/jasa.
 
 ### 5.6 Lokasi dan peta
 
@@ -235,6 +235,16 @@ Sebelum implementasi fitur transaksi, pemilik produk perlu memutuskan alur booki
 - **FR-46:** Perubahan role, status akun, dan keputusan moderasi dicatat dengan pelaku, waktu, objek, alasan, dan perubahan.
 - **FR-47:** Operasi admin penting harus memiliki konfirmasi sebelum tindakan yang sulit dibatalkan.
 - **FR-48:** Semua operasi administratif memeriksa role dan kepemilikan pada server serta menolak akses yang tidak sah.
+
+### 5.8 Pemesanan jasa
+
+- **FR-49:** Penyewa yang masuk dapat mengajukan permintaan pada jasa aktif, menyertakan rincian kebutuhan, serta jadwal dan lokasi yang diinginkan secara opsional.
+- **FR-50:** Sistem menyimpan snapshot nama jasa dan harga saat permintaan dibuat; nilai tersebut merupakan informasi, bukan pembayaran atau tagihan.
+- **FR-51:** Owner dapat menerima atau menolak permintaan. Penolakan dan pembatalan wajib menyertakan alasan.
+- **FR-52:** Penyewa dapat membatalkan permintaan yang belum diterima; penyewa maupun owner dapat membatalkan pesanan yang telah diterima.
+- **FR-53:** Owner dapat menandai pesanan diterima sebagai selesai. Pesanan yang selesai, ditolak, atau dibatalkan tidak dapat diaktifkan kembali.
+- **FR-54:** Penyewa dan owner hanya dapat melihat serta mengubah pesanan yang melibatkan akun mereka; setiap perubahan status dicatat dengan pelaku dan waktu.
+- **FR-55:** Chat tetap menjadi fitur privat terpisah dan dapat dimulai tanpa pesanan. Pembayaran online, refund, komisi, kalender ketersediaan, dan penyelesaian sengketa tidak termasuk alur ini.
 
 ## 6. Kebutuhan Non-Fungsional
 
@@ -404,4 +414,3 @@ Jangan menjadikan rating tinggi sebagai satu-satunya indikator kualitas; pantau 
 ## 12. Definisi Selesai untuk MVP
 
 MVP dapat dinyatakan siap dirilis setelah seluruh kriteria penerimaan wajib lulus uji, kontrol akses admin/super admin diuji negatif, alur chat dan pemulihan koneksi diverifikasi, migrasi serta backup database tersedia, halaman publik lolos pemeriksaan responsif dan aksesibilitas dasar, dan keputusan terbuka yang memblokir operasional (khususnya privasi lokasi, aturan ulasan, serta kebijakan moderasi) telah disetujui pemilik produk.
-
